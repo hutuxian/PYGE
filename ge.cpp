@@ -12,24 +12,24 @@ Status ge_initialize(std::map<std::string, std::string> &options)
 {
     py::gil_scoped_release release;
     Status res = GEInitialize(options);
-    py::gil_scoped_acqire acquire;
+    py::gil_scoped_acquire acquire;
     return res;
 }
 
 PYBIND11_MODULE(ge, m)
 {
     m.doc() = "pybind11 ge plugin"; // optional module docstring
-    
+
     m.def("ge_initialize", &ge_initialize, "GEInitialize");
-    
+
     m.def("ge_finalize", &GEFinalize, "GEFinalize");
-    
+
     //枚举封装
     py::enum_<GraphRunMode>(m, "GraphRunMode")
         .value("PREDICTION", GraphRunMode::PREDICTION)
         .value("TRAIN", GraphRunMode::TRAIN)
         .export_values();
-    
+
     py::enum_<DataType>(m, "DataType")
         .value("DT_FLOAT", DataType::DT_FLOAT)
         .value("DT_FLOAT16", DataType::DT_FLOAT16)
@@ -58,13 +58,13 @@ PYBIND11_MODULE(ge, m)
         .value("DT_DUAL", DataType::DT_DUAL)
         .value("DT_UNDEFINED", DataType::DT_UNDEFINED)
         .export_values();
-        
+
     py::enum_<Format>(m, "Format")
         .value("FORMAT_NCHW", Format::FORMAT_NCHW)
         .value("FORMAT_NHWC", Format::FORMAT_NHWC)
         .value("FORMAT_ND", Format::FORMAT_ND)
         .value("FORMAT_NC1HWC0", Format::FORMAT_NC1HWC0)
-        .value("FORMAT_FRACTAL_Z", Format::FRACTAL_Z)
+        .value("FORMAT_FRACTAL_Z", Format::FORMAT_FRACTAL_Z)
         .value("FORMAT_NC1C0HWPAD", Format::FORMAT_NC1C0HWPAD)
         .value("FORMAT_NHWC1C0", Format::FORMAT_NHWC1C0)
         .value("FORMAT_FSR_NCHW", Format::FORMAT_FSR_NCHW)
@@ -104,19 +104,19 @@ PYBIND11_MODULE(ge, m)
         .value("FORMAT_ALL", Format::FORMAT_ALL)
         .value("FORMAT_NULL", Format::FORMAT_NULL)
         .export_values();
-    
+
     py::enum_<UnknowShapeOpType>(m, "UnknowShapeOpType")
         .value("DEPEND_IN_SHAPE", UnknowShapeOpType::DEPEND_IN_SHAPE)
         .value("DEPEND_CONST_VALUE", UnknowShapeOpType::DEPEND_CONST_VALUE)
         .value("DEPEND_SHAPE_RANGE", UnknowShapeOpType::DEPEND_SHAPE_RANGE)
         .value("DEPEND_COMPUTE", UnknowShapeOpType::DEPEND_COMPUTE)
         .export_values();
-    
+
     py::enum_<DeviceType>(m, "DeviceType")
         .value("NPU", DeviceType::NPU)
         .value("CPU", DeviceType::CPU)
         .export_values();
-    
+
     // 类封装
     py::class_<Session>(m, "Session")
         .def(py::init<const std::map<std::string, std::string> &>())
@@ -126,13 +126,13 @@ PYBIND11_MODULE(ge, m)
         .def("run_graph", &Session::RunGraph, py::call_guard<py::gil_scoped_release>())
         .def("build_graph", &Session::BuildGraph)
         .def("run_graph_async", &Session::RunGraphAsync)
-        .def("register_call_back_func", 
+        .def("register_call_back_func",
              (Status(Session::*)(
                  const std::string &,
                  std::function<uint32_t(uint32_t graph_id, const std::map<std::string, ge::Tensor> &params_list)>)) &
                  Session::RegisterCallBackFunc)
         .def("is_graph_need_rebuild", &Session::IsGraphNeedRebuild);
-    
+
     py::class_<Graph>(m, "Graph")
         .def(py::init<>())
         .def(py::init<const std::string &>())
@@ -150,7 +150,7 @@ PYBIND11_MODULE(ge, m)
         .def("load_from_file", &Graph::LoadFromFile)
         .def("get_name", &Graph::GetName)
         .def("set_need_iteration", &Graph::SetNeedIteration);
-        
+
     py::class_<Operator>(m, "Operator")
         .def(py::init<>())
         .def(py::init<const std::string &>())
@@ -226,8 +226,8 @@ PYBIND11_MODULE(ge, m)
         .def("get_subgraph_builder", &Operator::GetSubgraphBuilder)
         .def("get_subgraph", &Operator::GetSubgraph)
         .def("get_dynamic_subgraph_builder", &Operator::GetDynamicSubgraphBuilder)
-        .def("get_dynamic_subgraph", &Operator::GetDynamicSubgraph)
-    
+        .def("get_dynamic_subgraph", &Operator::GetDynamicSubgraph);
+
     py::class_<Tensor>(m, "Tensor")
         .def(py::init<>())
         .def(py::init<const TensorDesc &>())
@@ -245,12 +245,12 @@ PYBIND11_MODULE(ge, m)
         .def("get_size", &Tensor::GetSize)
         .def("is_valid", &Tensor::IsValid)
         .def("clone", &Tensor::Clone);
-        
+
     py::class_<TensorDesc>(m, "TensorDesc")
         .def(py::init<>())
         .def(py::init<Shape, Format, DataType>(), py::arg("shape"), py::arg("format") = FORMAT_ND, py::arg("dt") = DT_FLOAT)
         .def(py::init<const TensorDesc &>())
-        .def("update", &TensorDesc::Update)
+        .def("update", (void (TensorDesc::*)(Shape, Format, DataType)) &TensorDesc::Update, py::arg("shape"), py::arg("format") = FORMAT_ND, py::arg("dt") = DT_FLOAT)
         .def("set_shape", &TensorDesc::SetShape)
         .def("get_shape", &TensorDesc::GetShape)
         .def("set_unknown_dim_num_shape", &TensorDesc::SetUnknownDimNumShape)
@@ -270,7 +270,7 @@ PYBIND11_MODULE(ge, m)
         .def("get_size", &TensorDesc::GetSize)
         .def("set_real_dim_cnt", &TensorDesc::SetRealDimCnt)
         .def("get_real_dim_cnt", &TensorDesc::GetRealDimCnt);
-    
+
     py::class_<Shape>(m, "Shape")
         .def(py::init<>())
         .def(py::init<const std::vector<int64_t> &>())

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(ge LANGUAGERS CXX)
+project(ge LANGUAGES CXX)
 
 #全局变量
 #请将/usr/local/Ascend/ascend-toolkit/20.10.0.B020/x86_64-linux_gcc7.3.0/fwkacllib/lib64替换为用到的.so所在的实际路径
