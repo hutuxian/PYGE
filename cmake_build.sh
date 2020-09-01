@@ -8,4 +8,5 @@ cd $path_build
 cmake ..
 make
 cp -af *.so ../
+
 rm -rf $path_build

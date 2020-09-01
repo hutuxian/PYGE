@@ -120,17 +120,22 @@ PYBIND11_MODULE(ge, m)
     // 类封装
     py::class_<Session>(m, "Session")
         .def(py::init<const std::map<std::string, std::string> &>())
-        .def("add_graph", (Status(Session::*)(uint32_t, const Graph &)) &Session::AddGraph)
-        .def("add_graph", (Status(Session::*)(uint32_t, const Graph &, const std::map<std::string, std::string> &)) &Session::AddGraph)
+        .def("add_graph", (Status(Session::*)(uint32_t, const Graph &)) & Session::AddGraph)
+        .def("add_graph",
+        (Status(Session::*)(uint32_t, const Graph &, const std::map<std::string, std::string> &)) & Session::AddGraph)
         .def("remove_graph", &Session::RemoveGraph)
-        .def("run_graph", &Session::RunGraph, py::call_guard<py::gil_scoped_release>())
+        .def("run_graph",
+            [](Session &ss, uint32_t graphId, const std::vector<Tensor> &inputs) -> py::tuple {
+                std::vector<Tensor> outputs;
+                Status res = ss.RunGraph(graphId, inputs, outputs);
+                return py::make_tuple(outputs, res);
+            },
+            py::call_guard<py::gil_scoped_release>())
         .def("build_graph", &Session::BuildGraph)
         .def("run_graph_async", &Session::RunGraphAsync)
-        .def("register_call_back_func",
-             (Status(Session::*)(
-                 const std::string &,
-                 std::function<uint32_t(uint32_t graph_id, const std::map<std::string, ge::Tensor> &params_list)>)) &
-                 Session::RegisterCallBackFunc)
+        .def("register_call_back_func", (Status(Session::*)(const std::string &,
+                std::function<uint32_t(uint32_t graph_id, const std::map<std::string, ge::Tensor> &params_list)>)) &
+                Session::RegisterCallBackFunc)
         .def("is_graph_need_rebuild", &Session::IsGraphNeedRebuild);
 
     py::class_<Graph>(m, "Graph")
@@ -138,8 +143,10 @@ PYBIND11_MODULE(ge, m)
         .def(py::init<const std::string &>())
         .def("set_inputs", &Graph::SetInputs)
         .def("set_outputs", (Graph & (Graph::*)(const std::vector<Operator> &)) & Graph::SetOutputs)
-        .def("set_outputs", (Graph & (Graph::*)(const std::vector<std::pair<Operator, std::vector<size_t> > > &)) & Graph::SetOutputs)
-        .def("set_outputs", (Graph & (Graph::*)(const std::vector<std::pair<ge::Operator, std::string> > &)) & Graph::SetOutputs)
+        .def("set_outputs", 
+            (Graph & (Graph::*)(const std::vector<std::pair<Operator, std::vector<size_t> > > &)) & Graph::SetOutputs)
+        .def("set_outputs", 
+            (Graph & (Graph::*)(const std::vector<std::pair<ge::Operator, std::string> > &)) & Graph::SetOutputs)
         .def("set_targets", &Graph::SetTargets)
         .def("is_valid", &Graph::IsValid)
         .def("add_op", &Graph::AddOp)
@@ -159,7 +166,8 @@ PYBIND11_MODULE(ge, m)
         .def("get_name", &Operator::GetName)
         .def("get_op_type", &Operator::GetOpType)
         .def("set_input", (Operator & (Operator::*)(const string &, const Operator &)) & Operator::SetInput)
-        .def("set_input", (Operator & (Operator::*)(const string &, const Operator &, const string &)) & Operator::SetInput)
+        .def("set_input",
+            (Operator & (Operator::*)(const string &, const Operator &, const string &)) & Operator::SetInput)
         .def("set_input", (Operator & (Operator::*)(const string &, const Operator &, uint32_t)) & Operator::SetInput)
         .def("add_control_input", &Operator::AddControlInput)
         .def("get_input_const_data", &Operator::GetInputConstData)
@@ -198,7 +206,8 @@ PYBIND11_MODULE(ge, m)
         .def("set_attr", (Operator & (Operator::*)(const string &, const Tensor &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<Tensor> &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<uint8_t> &)) & Operator::SetAttr)
-        .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<std::vector<int64_t> > &)) & Operator::SetAttr)
+        .def("set_attr",
+            (Operator & (Operator::*)(const string &, const std::vector<std::vector<int64_t> > &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<DataType> &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const DataType &)) & Operator::SetAttr)
         .def("get_attr", (graphStatus(Operator::*)(const string &, int64_t &) const) & Operator::GetAttr)
@@ -217,7 +226,8 @@ PYBIND11_MODULE(ge, m)
         .def("get_attr", (graphStatus(Operator::*)(const string &, Tensor &) const) & Operator::GetAttr)
         .def("get_attr", (graphStatus(Operator::*)(const string &, std::vector<Tensor> &) const) & Operator::GetAttr)
         .def("get_attr", (graphStatus(Operator::*)(const string &, std::vector<uint8_t> &) const) & Operator::GetAttr)
-        .def("get_attr", (graphStatus(Operator::*)(const string &, std::vector<std::vector<int64_t> > &) const) & Operator::GetAttr)
+        .def("get_attr",
+            (graphStatus(Operator::*)(const string &, std::vector<std::vector<int64_t> > &) const) & Operator::GetAttr)
         .def("get_attr", (graphStatus(Operator::*)(const string &, std::vector<DataType> &) const) & Operator::GetAttr)
         .def("get_attr", (graphStatus(Operator::*)(const string &, DataType &) const) & Operator::GetAttr)
         .def("break_connect", &Operator::BreakConnect)
@@ -240,17 +250,28 @@ PYBIND11_MODULE(ge, m)
         .def("set_data", (graphStatus(Tensor::*)(const uint8_t *, size_t)) & Tensor::SetData)
         .def("set_data", (graphStatus(Tensor::*)(const std::string &)) & Tensor::SetData)
         .def("set_data", (graphStatus(Tensor::*)(const std::vector<std::string> &)) & Tensor::SetData)
-        .def("get_data", (const uint8_t *(Tensor::*)() const) & Tensor::GetData)
-        .def("get_data", (uint8_t * (Tensor::*)()) & Tensor::GetData)
+        
+        .def("get_data",
+            [](Tensor &ts) -> py::list {
+                py::list v_data;
+                uint8_t *data = ts.GetData();
+                size_t size = ts.GetSize();
+                for (int i=0; i < size; ++i) {
+                    v_data.append(data[i]);
+                }
+                return v_data;
+            })
         .def("get_size", &Tensor::GetSize)
         .def("is_valid", &Tensor::IsValid)
         .def("clone", &Tensor::Clone);
 
     py::class_<TensorDesc>(m, "TensorDesc")
         .def(py::init<>())
-        .def(py::init<Shape, Format, DataType>(), py::arg("shape"), py::arg("format") = FORMAT_ND, py::arg("dt") = DT_FLOAT)
+        .def(py::init<Shape, Format, DataType>(), py::arg("shape"), py::arg("format") = FORMAT_ND,
+            py::arg("dt") = DT_FLOAT)
         .def(py::init<const TensorDesc &>())
-        .def("update", (void (TensorDesc::*)(Shape, Format, DataType)) &TensorDesc::Update, py::arg("shape"), py::arg("format") = FORMAT_ND, py::arg("dt") = DT_FLOAT)
+        .def("update", (void (TensorDesc::*)(Shape, Format, DataType)) &TensorDesc::Update, py::arg("shape"),
+            py::arg("format") = FORMAT_ND, py::arg("dt") = DT_FLOAT)
         .def("set_shape", &TensorDesc::SetShape)
         .def("get_shape", &TensorDesc::GetShape)
         .def("set_unknown_dim_num_shape", &TensorDesc::SetUnknownDimNumShape)
