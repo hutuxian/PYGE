@@ -31,7 +31,7 @@ def get_tensor_data(tensor, dtype):
     return arr_2
 
 # users can load data from data dir
-def get_data_from_bin(in_path, shape_list, format=ge.FORMAT_ND, data_type=ge.DT_FLOAT16):
+def get_tensor_from_bin(in_path, shape_list, format=ge.FORMAT_ND, data_type=ge.DT_FLOAT16):
     size = 1
     for i in range(len(shape_list)):
         size *= shape_list[i]
@@ -40,6 +40,7 @@ def get_data_from_bin(in_path, shape_list, format=ge.FORMAT_ND, data_type=ge.DT_
     np_in = np.fromfile(in_path, dtype=np.uint8)
     np_size = np_in.size * np_in.itemsize
     assert np_size == data_len
+    
     input_tensor_desc = ge.TensorDesc(ge.Shape(shape_list), format, data_type)
     input_tensor_desc.set_real_dim_cnt(len(shape_list))
     input_tensor = ge.Tensor(input_tensor_desc, np_in)
@@ -59,6 +60,7 @@ def gen_tensor(tensor_shape, value):
     tensor = ge.Tensor()
     tensor.set_tensor_desc(input_tensor_desc)
     tensor.set_data(np_data)
+
     return tensor
 
 #generate init graph
@@ -71,10 +73,10 @@ def gen_init_graph(graph_name, tensor_desc_list, var_name, var_values):
         tensor = gen_tensor(tensor_desc_list[i].get_shape().get_dims(), var_values[i])
 
         var_const = op.Constant().set_attr_value(tensor)
-        var_const.updata_output_desc_y(tensor_desc_list[i])
+        var_const.update_output_desc_y(tensor_desc_list[i])
 
         var_init = op.Variable(var_name[i])
-        var_init.updata_output_desc_y(tensor_desc_list[i])
+        var_init.update_output_desc_y(tensor_desc_list[i])
         var_assign = op.Assign().set_input_ref(var_init).set_input_value(var_const)
         in_operator.append(var_init)
 

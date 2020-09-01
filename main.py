@@ -3,7 +3,7 @@ import ge
 import graph_utils
 
 PATH = "./data/"
-var_name = ['x1','x2']
+var_name = ['x1', 'x2']
 
 def check_ret(message, ret):
     if ret != 0:
@@ -17,13 +17,13 @@ def test_graph():
     }
     ret = ge.ge_initialize(config)
     check_ret("ge_initialize", ret)
-    print("liInitiaze ge success.")
+    print("Initialize ge success.")
 
     # 1. Generate graph
     desc = ge.TensorDesc(ge.Shape([2,1]), ge.FORMAT_ND, ge.DT_FLOAT16)
     var_tensor_desc = [desc, desc]
 
-    # 1.1init graph
+    # 1.1 init graph
     init_graph_id = 0
     init_var_graph = graph_utils.gen_init_graph("InitVarGraph", var_tensor_desc, var_name, [0, 0])
     print("Generate init graph success.")
@@ -72,7 +72,7 @@ def test_graph():
     print("Session run add graph success.")
 
     print('a=', graph_utils.get_tensor_data(input_add[0], np.float16),
-        '\nb=', graph_utils.get_tensor_data(input_add[0], np.float16),
+        '\nb=', graph_utils.get_tensor_data(input_add[1], np.float16),
         '\nout=', graph_utils.get_tensor_data(output_add[0], np.float16))
 
     # 5.Optional operation: If a graph is runned before, and want to run again,
@@ -86,6 +86,6 @@ def test_graph():
 
 if __name__ == "__main__":
     test_graph()
-    
+
 
 
