@@ -37,10 +37,13 @@ cd ../..
 
 # 编译成功，生成封装好的ge.cpython-37m-x86_64-linux-gnu.so
 
-export LD_LIBRARY_PATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/x86_64-linux_gcc7.3.0/fwkacllib/lib64:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=/usr/localgcc7.3.0/lib64:/usr/local/Ascend/add-ons:$LD_LIBRARY_PATH
-export PYTHONPATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/x86_64-linux_gcc7.3.0/fwkacllib/python/site-packages/te:$PYTHONPATH
-export PYTHONPATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/x86_64-linux_gcc7.3.0/fwkacllib/python/site-packages/topi:$PYTHONPATH
+#设置环境变量
+# 以下命令中的/usr/local/Ascend/ascend-toolkit/20.10.0.B020/fwkacllib以实际路径为准！
+export LD_LIBRARY_PATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/fwkacllib/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/local/gcc7.3.0/lib64:/usr/local/Ascend/add-ons:$LD_LIBRARY_PATH
+export PYTHONPATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/fwkacllib/python/site-packages/te:$PYTHONPATH
+export PYTHONPATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/fwkacllib/python/site-packages/topi:$PYTHONPATH
+export PATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/fwkacllib/ccec_compiler/bin:$PATH
 
 python3.7.5
 import ge
