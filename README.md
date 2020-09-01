@@ -24,7 +24,7 @@ cmake ..
 # 编译并运行测试用例
 make check -j 4
 # 用例可以正常运行，则证明pybind11安装成功
-#回到ge目录
+# 回到ge目录
 cd ../..
 
 # 编写ge.cpp对GE中的函数进行封装
@@ -37,7 +37,7 @@ cd ../..
 
 # 编译成功，生成封装好的ge.cpython-37m-x86_64-linux-gnu.so
 
-#设置环境变量
+# 设置环境变量
 # 以下命令中的/usr/local/Ascend/ascend-toolkit/20.10.0.B020/fwkacllib以实际路径为准！
 export LD_LIBRARY_PATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/fwkacllib/lib64:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/usr/local/gcc7.3.0/lib64:/usr/local/Ascend/add-ons:$LD_LIBRARY_PATH
