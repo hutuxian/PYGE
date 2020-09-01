@@ -44,6 +44,7 @@ export LD_LIBRARY_PATH=/usr/local/gcc7.3.0/lib64:/usr/local/Ascend/add-ons:$LD_L
 export PYTHONPATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/fwkacllib/python/site-packages/te:$PYTHONPATH
 export PYTHONPATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/fwkacllib/python/site-packages/topi:$PYTHONPATH
 export PATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/fwkacllib/ccec_compiler/bin:$PATH
+export ASCEND_OPP_PATH=/usr/local/Ascend/ascend-toolkit/20.10.0.B020/opp
 
 python3.7.5
 import ge
