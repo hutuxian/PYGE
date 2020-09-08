@@ -191,7 +191,7 @@ PYBIND11_MODULE(ge, m)
         .def("get_input_desc", (TensorDesc(Operator::*)(uint32_t) const) & Operator::GetInputDesc)
         .def("get_dynamic_output_num", &Operator::GetDynamicOutputNum)
         .def("get_dynamic_input_num", &Operator::GetDynamicInputNum)
-        .def("try_get_input_desc", [](){
+        .def("try_get_input_desc", [](Operator &op, const string& name) -> py::tuple{
             TensorDesc tensor_desc;
             graphStatus status = op.TryGetInputDesc(name, tensor_desc);
             return py::make_tuple(tensor_desc, status);
