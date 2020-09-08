@@ -150,9 +150,21 @@ PYBIND11_MODULE(ge, m)
         .def("set_targets", &Graph::SetTargets)
         .def("is_valid", &Graph::IsValid)
         .def("add_op", &Graph::AddOp)
-        .def("find_op_by_name", &Graph::FindOpByName)
-        .def("find_op_by_type", &Graph::FindOpByType)
-        .def("get_all_op_name", &Graph::GetAllOpName)
+        .def("find_op_by_name", [](Graph &graph, const string& name) -> py::tuple{
+            ge::Operator op;
+            graphStatus status = graph.FindOpByName(name, op);
+            return py::make_tuple(op, status);
+        })
+        .def("find_op_by_type", [](Graph &graph, const string& type) -> py::tuple{
+            std::vector<ge::Operator> ops;
+            graphStatus status = graph.FindOpByType(type, ops);
+            return py::make_tuple(ops, status);
+        })
+        .def("get_all_op_name", [](Graph &graph) -> py::tuple{
+            std::vector<string> op_name;
+            graphStatus status = graph.GetAllOpName(op_name);
+            return py::make_tuple(op_name, status);
+        })
         .def("save_to_file", &Graph::SaveToFile)
         .def("load_from_file", &Graph::LoadFromFile)
         .def("get_name", &Graph::GetName)
@@ -170,12 +182,20 @@ PYBIND11_MODULE(ge, m)
             (Operator & (Operator::*)(const string &, const Operator &, const string &)) & Operator::SetInput)
         .def("set_input", (Operator & (Operator::*)(const string &, const Operator &, uint32_t)) & Operator::SetInput)
         .def("add_control_input", &Operator::AddControlInput)
-        .def("get_input_const_data", &Operator::GetInputConstData)
+        .def("get_input_const_data", [](Operator &op, const string& dst_name) -> py::tuple{
+            Tensor data;
+            graphStatus res = op.GetInputConstData(dst_name, data);
+            return py::make_tuple(data, res);
+        })
         .def("get_input_desc", (TensorDesc(Operator::*)(const string &) const) & Operator::GetInputDesc)
         .def("get_input_desc", (TensorDesc(Operator::*)(uint32_t) const) & Operator::GetInputDesc)
         .def("get_dynamic_output_num", &Operator::GetDynamicOutputNum)
         .def("get_dynamic_input_num", &Operator::GetDynamicInputNum)
-        .def("try_get_input_desc", &Operator::TryGetInputDesc)
+        .def("try_get_input_desc", [](Operator &op, const string& name) -> py::tuple{
+            TensorDesc tensor_desc;
+            graphStatus status = op.TryGetInputDesc(name, tensor_desc);
+            return py::make_tuple(tensor_desc, status);
+        })
         .def("update_input_desc", &Operator::UpdateInputDesc)
         .def("get_output_desc", (TensorDesc(Operator::*)(const string &) const) & Operator::GetOutputDesc)
         .def("get_output_desc", (TensorDesc(Operator::*)(uint32_t) const) & Operator::GetOutputDesc)
@@ -197,9 +217,15 @@ PYBIND11_MODULE(ge, m)
         .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<int64_t> &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<int32_t> &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<uint32_t> &)) & Operator::SetAttr)
+        .def("set_attr", [](Operator &op, const string &name, std::initializer_list<int64_t>& attrValue) -> Operator& {
+            return op.SetAttr(name, std::move(attrValue));
+        })
         .def("set_attr", (Operator & (Operator::*)(const string &, float)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<float> &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<string> &)) & Operator::SetAttr)
+        .def("set_attr", [](Operator &op, const string &name, AttrValue& attrValue) -> Operator& {
+            return op.SetAttr(name, std::move(attrValue));
+        })
         .def("set_attr", (Operator & (Operator::*)(const string &, const string &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, bool)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<bool> &)) & Operator::SetAttr)
@@ -276,7 +302,11 @@ PYBIND11_MODULE(ge, m)
         .def("get_shape", &TensorDesc::GetShape)
         .def("set_unknown_dim_num_shape", &TensorDesc::SetUnknownDimNumShape)
         .def("set_shape_range", &TensorDesc::SetShapeRange)
-        .def("get_shape_range", &TensorDesc::GetShapeRange)
+        .def("get_shape_range", [](TensorDesc &tensorDesc) -> py::tuple{
+            std::vector<std::pair<int64_t, int64_t> > range;
+            graphStatus status = tensorDesc.GetShapeRange(range);
+            return py::make_tuple(range, status);
+        })
         .def("set_format", &TensorDesc::SetFormat)
         .def("get_format", &TensorDesc::GetFormat)
         .def("get_origin_shape", &TensorDesc::GetOriginShape)
