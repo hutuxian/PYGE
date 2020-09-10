@@ -4,6 +4,7 @@
 #include <pybind11/functional.h>
 #include <ge/ge_api.h>
 #include <graph/attr_value.h>
+#incldue <graph/operator_factory.h>
 
 using namespace ge;
 namespace py = pybind11;
@@ -38,7 +39,7 @@ enum AttrType{
     AT_DT,
     AT_LIST_NAMEATTR,
     AT_NAMEATTR
-}
+};
 
 PYBIND11_MODULE(ge, m)
 {
@@ -150,7 +151,7 @@ PYBIND11_MODULE(ge, m)
         .value("AT_LIST_UINT32", AttrType::AT_LIST_UINT32)
         .value("AT_FLOAT", AttrType::AT_FLOAT)
         .value("AT_LIST_FLOAT", AttrType::AT_LIST_FLOAT)
-        .value("AT_ATTR_VALUE", AttrType::AAT_ATTR_VALUE)
+        .value("AT_ATTR_VALUE", AttrType::AT_ATTR_VALUE)
         .value("AT_STRING", AttrType::AT_STRING)
         .value("AT_LIST_STRING", AttrType::AT_LIST_STRING)
         .value("AT_BOOL", AttrType::AT_BOOL)
