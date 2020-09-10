@@ -16,6 +16,30 @@ Status ge_initialize(std::map<std::string, std::string> &options)
     return res;
 }
 
+enum AttrType{
+    AT_INT64 = 0,
+    AT_INT32,
+    AT_UINT32,
+    AT_LIST_INT64,
+    AT_LIST_INT32,
+    AT_LIST_UINT32,
+    AT_FLOAT,
+    AT_LIST_FLOAT,
+    AT_ATTR_VALUE,
+    AT_STRING,
+    AT_LIST_STRING,
+    AT_BOOL,
+    AT_LIST_BOOL,
+    AT_TENSOR,
+    AT_LIST_TENSOR,
+    AT_LIST_UINT8,
+    AT_LIST_LIST_INT64,
+    AT_LIST_DT,
+    AT_DT,
+    AT_LIST_NAMEATTR,
+    AT_NAMEATTR
+}
+
 PYBIND11_MODULE(ge, m)
 {
     m.doc() = "pybind11 ge plugin"; // optional module docstring
@@ -115,6 +139,30 @@ PYBIND11_MODULE(ge, m)
     py::enum_<DeviceType>(m, "DeviceType")
         .value("NPU", DeviceType::NPU)
         .value("CPU", DeviceType::CPU)
+        .export_values();
+
+    py::enum_<AttrType>(m, "AttrType")
+        .value("AT_INT64", AttrType::AT_INT64)
+        .value("AT_INT32", AttrType::AT_INT32)
+        .value("AT_UINT32", AttrType::AT_UINT32)
+        .value("AT_LIST_INT64", AttrType::AT_LIST_INT64)
+        .value("AT_LIST_INT32", AttrType::AT_LIST_INT32)
+        .value("AT_LIST_UINT32", AttrType::AT_LIST_UINT32)
+        .value("AT_FLOAT", AttrType::AT_FLOAT)
+        .value("AT_LIST_FLOAT", AttrType::AT_LIST_FLOAT)
+        .value("AT_ATTR_VALUE", AttrType::AAT_ATTR_VALUE)
+        .value("AT_STRING", AttrType::AT_STRING)
+        .value("AT_LIST_STRING", AttrType::AT_LIST_STRING)
+        .value("AT_BOOL", AttrType::AT_BOOL)
+        .value("AT_LIST_BOOL", AttrType::AT_LIST_BOOL)
+        .value("AT_TENSOR", AttrType::AT_TENSOR)
+        .value("AT_LIST_TENSOR", AttrType::AT_LIST_TENSOR)
+        .value("AT_LIST_UINT8", AttrType::AT_LIST_UINT8)
+        .value("AT_LIST_LIST_INT64", AttrType::AT_LIST_LIST_INT64)
+        .value("AT_LIST_DT", AttrType::AT_LIST_DT)
+        .value("AT_DT", AttrType::AT_DT)
+        .value("AT_LIST_NAMEATTR", AttrType::AT_LIST_NAMEATTR)
+        .value("AT_NAMEATTR", AttrType::AT_NAMEATTR)
         .export_values();
 
     // 类封装
@@ -236,6 +284,148 @@ PYBIND11_MODULE(ge, m)
             (Operator & (Operator::*)(const string &, const std::vector<std::vector<int64_t> > &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<DataType> &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const DataType &)) & Operator::SetAttr)
+        .def("get_attr", [](Operator &op, const string &name, AttrType type) -> py::tuple{
+            graphStatus res = -1;
+            switch (type) {
+                case AT_INT64:
+                    {
+                        int64_t i_64_av;
+                        res = op.GetAttr(name, i_64_av);
+                        return py::make_tuple(i_64_av, res);
+                    }
+                    break;
+                case AT_INT32:
+                    {
+                        int32_t i_32_av;
+                        res = op.GetAttr(name, i_32_av);
+                        return py::make_tuple(i_32_av, res);
+                    }
+                    break;
+                case AT_UINT32:
+                    {
+                        uint32_t ui_32_av;
+                        res = op.GetAttr(name, ui_32_av);
+                        return py::make_tuple(ui_32_av, res);
+                    }
+                    break;
+                case AT_LIST_INT64:
+                    {
+                        std::vector<int64_t> v_i_64_av;
+                        res = op.GetAttr(name, v_i_64_av);
+                        return py::make_tuple(v_i_64_av, res);
+                    }
+                    break;
+                case AT_LIST_INT32:
+                    {
+                        std::vector<int32_t> v_i_32_av;
+                        res = op.GetAttr(name, v_i_32_av);
+                        return py::make_tuple(v_i_32_av, res);
+                    }
+                    break;
+                case AT_LIST_UINT32:
+                    {
+                        std::vector<uint32_t> v_ui_32_av;
+                        res = op.GetAttr(name, v_ui_32_av);
+                        return py::make_tuple(v_ui_32_av, res);
+                    }
+                    break;
+                case AT_FLOAT:
+                    {
+                        float f_av;
+                        res = op.GetAttr(name, f_av);
+                        return py::make_tuple(f_av, res);
+                    }
+                    break;
+                case AT_LIST_FLOAT:
+                    {
+                        std::vector<float> v_f_av;
+                        res = op.GetAttr(name, v_f_av);
+                        return py::make_tuple(v_f_av, res);
+                    }
+                    break;
+                case AT_ATTR_VALUE:
+                    {
+                        AttrValue o_av;
+                        res = op.GetAttr(name, o_av);
+                        return py::make_tuple(o_av, res);
+                    }
+                    break;
+                case AT_STRING:
+                    {
+                        string s_av;
+                        res = op.GetAttr(name, s_av);
+                        return py::make_tuple(s_av, res);
+                    }
+                    break;
+                case AT_LIST_STRING:
+                    {
+                        std::vector<string> v_s_av;
+                        res = op.GetAttr(name, v_s_av);
+                        return py::make_tuple(v_s_av, res);
+                    }
+                    break;
+                case AT_BOOL:
+                    {
+                        bool b_av;
+                        res = op.GetAttr(name, b_av);
+                        return py::make_tuple(b_av, res);
+                    }
+                    break;
+                case AT_LIST_BOOL:
+                    {
+                        std::vector<bool> v_b_av;
+                        res = op.GetAttr(name, v_b_av);
+                        return py::make_tuple(v_b_av, res);
+                    }
+                    break;
+                case AT_TENSOR:
+                    {
+                        Tensor t_av;
+                        res = op.GetAttr(name, t_av);
+                        return py::make_tuple(t_av, res);
+                    }
+                    break;
+                case AT_LIST_TENSOR:
+                    {
+                        std::vector<Tensor> v_t_av;
+                        res = op.GetAttr(name, v_t_av);
+                        return py::make_tuple(v_t_av, res);
+                    }
+                    break;
+                case AT_LIST_UINT8:
+                    {
+                        std::vector<uint8_t> v_ui_8_av;
+                        res = op.GetAttr(name, v_ui_8_av);
+                        return py::make_tuple(v_ui_8_av, res);
+                    }
+                    break;
+                case AT_LIST_LIST_INT64:
+                    {
+                        std::vector<std::vector<int64_t> > v_v_i_64_av;
+                        res = op.GetAttr(name, v_v_i_64_av);
+                        return py::make_tuple(v_v_i_64_av, res);
+                    }
+                    break;
+                case AT_DT:
+                    {
+                        ge::DataType dt_av;
+                        res = op.GetAttr(name, dt_av);
+                        return py::make_tuple(dt_av, res);
+                    }
+                    break;
+                case AT_LIST_DT:
+                    {
+                        std::vector<ge::DataType> v_dt_av;
+                        res = op.GetAttr(name, v_dt_av);
+                        return py::make_tuple(v_dt_av, res);
+                    }
+                    break;
+                default:
+                    return py::make_tuple(0, res);
+                    break;
+            }
+        })
+
         .def("get_attr", (graphStatus(Operator::*)(const string &, int64_t &) const) & Operator::GetAttr)
         .def("get_attr", (graphStatus(Operator::*)(const string &, int32_t &) const) & Operator::GetAttr)
         .def("get_attr", (graphStatus(Operator::*)(const string &, uint32_t &) const) & Operator::GetAttr)
@@ -333,6 +523,15 @@ PYBIND11_MODULE(ge, m)
     
     py::class_<AttrValue>(m, "AttrValue")
         .def(py::init<>());
+
+    py::class_<OperatorFactory>(m, "OperatorFactory")
+        .def("create_operator", &OperatorFactory::CreateOperator)
+        .def("get_ops_type_list", []() -> py::tuple{
+            std::vector<std::string> all_ops;
+            graphStatus status = OperatorFactory::GetOpsTypeList(all_ops);
+            return py::make_tuple(all_ops, status);
+        })
+        .def("is_exist_op", &OperatorFactory::IsExistOp);
 }
 
 
