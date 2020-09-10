@@ -4,7 +4,7 @@
 #include <pybind11/functional.h>
 #include <ge/ge_api.h>
 #include <graph/attr_value.h>
-#incldue <graph/operator_factory.h>
+#include <graph/operator_factory.h>
 
 using namespace ge;
 namespace py = pybind11;
