@@ -285,7 +285,7 @@ PYBIND11_MODULE(ge, m)
             (Operator & (Operator::*)(const string &, const std::vector<std::vector<int64_t> > &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const std::vector<DataType> &)) & Operator::SetAttr)
         .def("set_attr", (Operator & (Operator::*)(const string &, const DataType &)) & Operator::SetAttr)
-        .def("get_attr", [](Operator &op, const string &name, AttrType type) -> py::tuple{
+        .def("get_attr", [](Operator &op, const string &name, AttrType type)->py::tuple{
             graphStatus res = -1;
             switch (type) {
                 case AT_INT64:
@@ -527,7 +527,7 @@ PYBIND11_MODULE(ge, m)
 
     py::class_<OperatorFactory>(m, "OperatorFactory")
         .def("create_operator", &OperatorFactory::CreateOperator)
-        .def("get_ops_type_list", []() -> py::tuple{
+        .def("get_ops_type_list", []()->py::tuple{
             std::vector<std::string> all_ops;
             graphStatus status = OperatorFactory::GetOpsTypeList(all_ops);
             return py::make_tuple(all_ops, status);

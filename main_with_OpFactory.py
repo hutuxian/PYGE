@@ -1,3 +1,6 @@
+"""
+-*- coding:utf-8 -*-
+"""
 import numpy as np
 import unittest
 import ge
@@ -8,6 +11,7 @@ var_name = ['x1', 'x2']
 def check_ret(message, ret):
     if ret != 0:
         raise Exception("{} failed ret = {}".format(message, ret))
+
 
 class PyGe(object):
     def __init__(self, config, options):
@@ -28,6 +32,9 @@ class PyGe(object):
         del self.session
     
     def get_data_type_size(self, dt):
+        """
+        功能简介：不同数据类型所占的字节数
+        """
         dailation = 1
         if dt == ge.DT_FLOAT:
             dailation = 4
@@ -50,12 +57,18 @@ class PyGe(object):
         return dailation
 
     def get_tensor_data(self, tensor, dtype):
+        """
+        功能简介：转化数据
+        """
         data = np.array(tensor.get_data(), dtype=np.uint8)
         b_arr = data.tobytes()
         arr_2 = np.frombuffer(b_arr, dtype=dtype)
         return arr_2
     
     def get_tensor_from_bin(self, in_path, shape_list, format=ge.FORMAT_ND, data_type=ge.DT_FLOAT16):
+        """
+        功能简介：读取生成的数据作为输入数据
+        """
         size = 1
         for i in range(len(shape_list)):
             size *= shape_list[i]
@@ -71,6 +84,9 @@ class PyGe(object):
         return input_tensor
     
     def gen_tensor(self, tensor_shape, value):
+        """
+        功能简介：生成tensor
+        """
         size = 1
         for i in range(len(tensor_shape)):
             size *= tensor_shape[i]
@@ -87,15 +103,22 @@ class PyGe(object):
         return tensor
 
     def add_graph(self, graph_id, graph):
+        """
+        功能简介：添加图
+        """
         ret = self.session.add_graph(graph_id, graph)
         check_ret("add_graph", ret)
         print("Session add {} success.".format(graph_id))
     
     def run_graph(self, graph_id, in_tensor):
+        """
+        功能简介：运行图
+        """
         out_tensor, ret = self.session.run_graph(graph_id, in_tensor)
         check_ret("run_graph", ret)
         print("Session run {} success.".format(graph_id))
         return out_tensor
+
 
 def test_op_factory():
     config = {"ge.exec.deviceId": "0", "ge.graphRunMode": "1"}
