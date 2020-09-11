@@ -9,11 +9,18 @@ PATH = "./data/"
 var_name = ['x1', 'x2']
 
 def check_ret(message, ret):
+    """
+    check return value
+    """
     if ret != 0:
         raise Exception("{} failed ret = {}".format(message, ret))
 
 
 class PyGe(object):
+    """
+    class PyGe
+    function: encapsulating methods of GE
+    """
     def __init__(self, config, options):
         ret = ge.ge_initialize(config)
         check_ret("ge_initialize", ret)
@@ -121,6 +128,9 @@ class PyGe(object):
 
 
 def test_op_factory():
+    """
+    main
+    """
     config = {"ge.exec.deviceId": "0", "ge.graphRunMode": "1"}
     options = {"a": "b", "ge.trainFlag": "1"}
     ge_handle =PyGe(config, options)
