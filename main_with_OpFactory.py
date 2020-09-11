@@ -110,7 +110,7 @@ def test_op_factory():
     graph.add_op(data_x1_shape)
     graph.add_op(data_x2_shape)
 
-    add = ge.OperatorFactory.create_operator("add", "Add").set_input("x1", data_x1_shape).set("x2", data_x2_shape)
+    add = ge.OperatorFactory.create_operator("add", "Add").set_input("x1", data_x1_shape).set_input("x2", data_x2_shape)
     
     in_operator = [data_x1_shape, data_x2_shape]
     out_operator = [add]
