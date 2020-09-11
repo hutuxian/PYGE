@@ -105,7 +105,7 @@ def test_op_factory():
     graph = ge.Graph("Add")
 
     data_x1_shape = ge.OperatorFactory.create_operator("x1", "Data").set_attr("index", 0)
-    data_x2_shape = ge.OperatorFactory.create_operator("x2", "Data").set_sttr("index", 1)
+    data_x2_shape = ge.OperatorFactory.create_operator("x2", "Data").set_attr("index", 1)
 
     graph.add_op(data_x1_shape)
     graph.add_op(data_x2_shape)
