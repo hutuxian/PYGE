@@ -33,7 +33,7 @@ class PyGe(object):
     
     def get_data_type_size(self, dt):
         """
-        功能简介：不同数据类型所占的字节数
+        get data type size
         """
         dailation = 1
         if dt == ge.DT_FLOAT:
@@ -58,7 +58,7 @@ class PyGe(object):
 
     def get_tensor_data(self, tensor, dtype):
         """
-        功能简介：转化数据
+        transform data
         """
         data = np.array(tensor.get_data(), dtype=np.uint8)
         b_arr = data.tobytes()
@@ -67,7 +67,7 @@ class PyGe(object):
     
     def get_tensor_from_bin(self, in_path, shape_list, format=ge.FORMAT_ND, data_type=ge.DT_FLOAT16):
         """
-        功能简介：读取生成的数据作为输入数据
+        read bin to generate input data
         """
         size = 1
         for i in range(len(shape_list)):
@@ -85,7 +85,7 @@ class PyGe(object):
     
     def gen_tensor(self, tensor_shape, value):
         """
-        功能简介：生成tensor
+        generate tensor
         """
         size = 1
         for i in range(len(tensor_shape)):
@@ -104,7 +104,7 @@ class PyGe(object):
 
     def add_graph(self, graph_id, graph):
         """
-        功能简介：添加图
+        add graph
         """
         ret = self.session.add_graph(graph_id, graph)
         check_ret("add_graph", ret)
@@ -112,7 +112,7 @@ class PyGe(object):
     
     def run_graph(self, graph_id, in_tensor):
         """
-        功能简介：运行图
+        run graph
         """
         out_tensor, ret = self.session.run_graph(graph_id, in_tensor)
         check_ret("run_graph", ret)
