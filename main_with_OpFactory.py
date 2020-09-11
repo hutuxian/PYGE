@@ -94,7 +94,7 @@ class PyGe(object):
     def run_graph(self, graph_id, in_tensor):
         out_tensor, ret = self.session.run_graph(graph_id, in_tensor)
         check_ret("run_graph", ret)
-        print("Session run {} success.".format(grah_id))
+        print("Session run {} success.".format(graph_id))
         return out_tensor
 
 def test_op_factory():
