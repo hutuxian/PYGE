@@ -1,3 +1,4 @@
+#!/bin/bash
 
 path_cur=$(cd `dirname $0`; pwd)
 echo ${path_cur}

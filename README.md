@@ -1,24 +1,25 @@
 # pyge
 
-#### 介绍
+## 介绍
 The Python API for Graph Engine.
 
-#### 依赖
-开发与测试环境：A+X centos7.6（非强依赖）<br>
-依赖：Python3.7.5<br>
-      gcc 7.3.0<br>
-依赖详细信息详见《CANN 软件安装指南（训练）》
+## 依赖
 
-#### 安装run包
-            从社区中下载所需的run包：
-            https://support.huawei.com/enterprise/zh/ascend-computing/atlas-data-center-solution-pid-251167910/software
-            https://support.huawei.com/enterprise/zh/ascend-computing/a800-9010-pid-250702809/software
-            非商用版本的最新版本
-            获取：A800-9010-npu-driver_20.1.0.B010_ubuntu18.04-x86_64.run
-            A800-9010-npu-firmware_1.75.t15.200.b150.run
-            Ascend-Toolkit-20.10.0.B023-x86_64-linux_gcc7.3.0.run
-            用root用户登录环境，上传所需的run包（比如：上传到/home/hw）
-            安装步骤详见《CANN 软件安装指南（训练）》，此处仅简要说明
+* 开发与测试环境：A+X centos7.6（非强依赖）<br>
+* 依赖：Python3.7.5<br>
+          gcc 7.3.0<br>
+> 依赖详细信息详见《CANN 软件安装指南（训练）》
+
+## 安装run包
+
+* 从社区中下载所需的run包：
+    * https://support.huawei.com/enterprise/zh/ascend-computing/atlas-data-center-solution-pid-251167910/software
+    * https://support.huawei.com/enterprise/zh/ascend-computing/a800-9010-pid-250702809/software
+* 非商用版本的最新版本获取：
+    * A800-9010-npu-driver_20.1.0.B010_ubuntu18.04-x86_64.run
+    * A800-9010-npu-firmware_1.75.t15.200.b150.run
+    * Ascend-Toolkit-20.10.0.B023-x86_64-linux_gcc7.3.0.run
+* 用root用户登录环境，上传所需的run包（比如：上传到`/home/hw`），安装步骤详见《CANN 软件安装指南（训练）》，此处仅简要说明
 ```
 cd /home/hw
 chmod 750 *.run
@@ -29,7 +30,7 @@ reboot
 ./Ascend-Toolkit-20.10.0.B023-x86_64-linux_gcc7.3.0.run --install
 ```
 
-#### 使用说明
+## 使用说明
 ```
 # 创建ge文件夹
 mkdir ge
@@ -71,3 +72,7 @@ import ge
 # 运行成功没有报错就证明封装成功
 # 然后就可以用封装好的ge函数编写对应的python脚本了
 ```
+
+## 许可证
+
+[Apache License 2.0](LICENSE)
