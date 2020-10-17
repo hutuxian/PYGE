@@ -72,7 +72,7 @@ class PyGe(object):
         arr_2 = np.frombuffer(b_arr, dtype=dtype)
         return arr_2
     
-    def get_tensor_from_bin(self, in_path, shape_list, format=ge.FORMAT_ND, data_type=ge.DT_FLOAT16):
+    def get_tensor_from_bin(self, in_path, shape_list, dformat=ge.FORMAT_ND, data_type=ge.DT_FLOAT16):
         """
         read bin to generate input data
         """
@@ -85,7 +85,7 @@ class PyGe(object):
         np_size = np_in.size * np_in.itemsize
         assert np_size == data_len
 
-        input_tensor_desc = ge.TensorDesc(ge.Shape(shape_list), format, data_type)
+        input_tensor_desc = ge.TensorDesc(ge.Shape(shape_list), dformat, data_type)
         input_tensor_desc.set_real_dim_cnt(len(shape_list))
         input_tensor = ge.Tensor(input_tensor_desc, np_in)
         return input_tensor
@@ -167,6 +167,7 @@ def test_op_factory():
         '\nb=', ge_handle.get_tensor_data(input_add[1], np.float16),
         '\nout=', ge_handle.get_tensor_data(output_add[0], np.float16))
 
+
 def test_random():
     config = {"ge.exec.deviceId": "0", "ge.graphRunMode": "1"}
     options = {}
@@ -192,7 +193,8 @@ def test_random():
     data1 = ge.OperatorFactory.create_operator("const", "Const").set_attr_tensor("value", shape_tensor)
     shape_const_desc = ge.TensorDesc(ge.Shape([4]), ge.FORMAT_NHWC, ge.DT_INT32)
     data1.update_output_desc("y", shape_const_desc)
-    result_output = ge.OperatorFactory.create_operator("random", "RandomUniform").set_input("shape", data1).set_attr_dtype("dtype", ge.DT_FLOAT)
+    result_output = ge.OperatorFactory.create_operator("random", "RandomUniform").set_input(
+        "shape", data1).set_attr_dtype("dtype", ge.DT_FLOAT)
 
     inputs = [data1]
     outputs = [result_output]

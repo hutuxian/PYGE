@@ -174,7 +174,7 @@ PYBIND11_MODULE(ge, m)
         (Status(Session::*)(uint32_t, const Graph &, const std::map<std::string, std::string> &)) & Session::AddGraph)
         .def("remove_graph", &Session::RemoveGraph)
         .def("run_graph",
-            [](Session &ss, uint32_t graphId, const std::vector<Tensor> &inputs) -> py::tuple {
+            [](Session &ss, uint32_t graphId, const std::vector<Tensor> &inputs)->py::tuple {
                 std::vector<Tensor> outputs;
                 Status res = ss.RunGraph(graphId, inputs, outputs);
                 return py::make_tuple(outputs, res);
@@ -199,17 +199,17 @@ PYBIND11_MODULE(ge, m)
         .def("set_targets", &Graph::SetTargets)
         .def("is_valid", &Graph::IsValid)
         .def("add_op", &Graph::AddOp)
-        .def("find_op_by_name", [](Graph &graph, const string& name) -> py::tuple{
+        .def("find_op_by_name", [](Graph &graph, const string& name)->py::tuple{
             ge::Operator op;
             graphStatus status = graph.FindOpByName(name, op);
             return py::make_tuple(op, status);
         })
-        .def("find_op_by_type", [](Graph &graph, const string& type) -> py::tuple{
+        .def("find_op_by_type", [](Graph &graph, const string& type)->py::tuple{
             std::vector<ge::Operator> ops;
             graphStatus status = graph.FindOpByType(type, ops);
             return py::make_tuple(ops, status);
         })
-        .def("get_all_op_name", [](Graph &graph) -> py::tuple{
+        .def("get_all_op_name", [](Graph &graph)->py::tuple{
             std::vector<string> op_name;
             graphStatus status = graph.GetAllOpName(op_name);
             return py::make_tuple(op_name, status);
@@ -231,7 +231,7 @@ PYBIND11_MODULE(ge, m)
             (Operator & (Operator::*)(const string &, const Operator &, const string &)) & Operator::SetInput)
         .def("set_input", (Operator & (Operator::*)(const string &, const Operator &, uint32_t)) & Operator::SetInput)
         .def("add_control_input", &Operator::AddControlInput)
-        .def("get_input_const_data", [](Operator &op, const string& dst_name) -> py::tuple{
+        .def("get_input_const_data", [](Operator &op, const string& dst_name)->py::tuple{
             Tensor data;
             graphStatus res = op.GetInputConstData(dst_name, data);
             return py::make_tuple(data, res);
@@ -240,7 +240,7 @@ PYBIND11_MODULE(ge, m)
         .def("get_input_desc", (TensorDesc(Operator::*)(uint32_t) const) & Operator::GetInputDesc)
         .def("get_dynamic_output_num", &Operator::GetDynamicOutputNum)
         .def("get_dynamic_input_num", &Operator::GetDynamicInputNum)
-        .def("try_get_input_desc", [](Operator &op, const string& name) -> py::tuple{
+        .def("try_get_input_desc", [](Operator &op, const string& name)->py::tuple{
             TensorDesc tensor_desc;
             graphStatus status = op.TryGetInputDesc(name, tensor_desc);
             return py::make_tuple(tensor_desc, status);
@@ -260,67 +260,67 @@ PYBIND11_MODULE(ge, m)
         .def("get_inputs_size", &Operator::GetInputsSize)
         .def("get_outputs_size", &Operator::GetOutputsSize)
         .def("get_all_attr_names_and_types", &Operator::GetAllAttrNamesAndTypes)
-        .def("set_attr_int64", [](Operator &op, const string &name, int64_t value) -> Operator&{
+        .def("set_attr_int64", [](Operator &op, const string &name, int64_t value)->Operator&{
             int64_t tar = (int64_t) value;
             return op.SetAttr(name, tar);
         })
-        .def("set_attr_int32", [](Operator &op, const string &name, int32_t value) -> Operator&{
+        .def("set_attr_int32", [](Operator &op, const string &name, int32_t value)->Operator&{
             int32_t tar = (int32_t) value;
             return op.SetAttr(name, tar);
         })
-        .def("set_attr_uint32", [](Operator &op, const string &name, uint32_t value) -> Operator&{
+        .def("set_attr_uint32", [](Operator &op, const string &name, uint32_t value)->Operator&{
             uint32_t tar = (uint32_t) value;
             return op.SetAttr(name, tar);
         })
         .def("set_attr_vec_int64", 
-            [](Operator &op, const string &name, const std::vector<int64_t> &value) -> Operator&{
+            [](Operator &op, const string &name, const std::vector<int64_t> &value)->Operator&{
             int len = value.size();
             std::vector<int64_t> tar;
             int64_t tmp;
-            for (int i=0; i < len; i++){
+            for (int i = 0; i < len; i++){
                 tmp = (int64_t) value[i];
                 tar.push_back(tmp);
             }
             return op.SetAttr(name, tar);
         })
         .def("set_attr_vec_int32", 
-            [](Operator &op, const string &name, const std::vector<int32_t> &value) -> Operator&{
+            [](Operator &op, const string &name, const std::vector<int32_t> &value)->Operator&{
             int len = value.size();
             std::vector<int32_t> tar;
             int32_t tmp;
-            for (int i=0; i < len; i++){
+            for (int i = 0; i < len; i++){
                 tmp = (int32_t) value[i];
                 tar.push_back(tmp);
             }
             return op.SetAttr(name, tar);
         })
         .def("set_attr_vec_uint32", 
-            [](Operator &op, const string &name, const std::vector<uint32_t> &value) -> Operator&{
+            [](Operator &op, const string &name, const std::vector<uint32_t> &value)->Operator&{
             int len = value.size();
             std::vector<uint32_t> tar;
             uint32_t tmp;
-            for (int i=0; i < len; i++){
+            for (int i = 0; i < len; i++){
                 tmp = (uint32_t) value[i];
                 tar.push_back(tmp);
             }
             return op.SetAttr(name, tar);
         })
         .def("set_attr_list_int64", 
-            [](Operator &op, const string &name, std::initializer_list<int64_t>& attrValue) -> Operator& {
+            [](Operator &op, const string &name, std::initializer_list<int64_t>& attrValue)->Operator& {
             return op.SetAttr(name, std::move(attrValue));
         })
-        .def("set_attr_attrvalue", [](Operator &op, const string &name, AttrValue& attrValue) -> Operator& {
+        .def("set_attr_attrvalue", [](Operator &op, const string &name, AttrValue& attrValue)->Operator& {
             return op.SetAttr(name, std::move(attrValue));
         })
-        .def("set_attr_float", [](Operator &op, const string &name, float value) -> Operator&{
+        .def("set_attr_float", [](Operator &op, const string &name, float value)->Operator&{
             float tar = (float) value;
             return op.SetAttr(name, tar);
         })
-        .def("set_attr_vec_float", [](Operator &op, const string &name, const std::vector<float> &value) -> Operator&{
+        .def("set_attr_vec_float", [](Operator &op, const string &name, const std::vector<float> &value)->Operator&{
             int len = value.size();
             std::vector<float> tar;
             float tmp;
-            for (int i=0; i < len; i++){
+            for (int i = 0; i < len; i++){
                 tmp = (float) value[i];
                 tar.push_back(tmp);
             }
@@ -329,16 +329,16 @@ PYBIND11_MODULE(ge, m)
         .def("set_attr_string", (Operator & (Operator::*)(const string &, const string &)) & Operator::SetAttr)
         .def("set_attr_vec_string",
             (Operator & (Operator::*)(const string &, const std::vector<string> &)) & Operator::SetAttr)
-        .def("set_attr_bool", [](Operator &op, const string &name, bool value) -> Operator&{
+        .def("set_attr_bool", [](Operator &op, const string &name, bool value)->Operator&{
             if (value)
                 return op.SetAttr(name, true);
             else
                 return op.SetAttr(name, false);
         })
-        .def("set_attr_vec_bool", [](Operator &op, const string &name, const std::vector<bool> &value) -> Operator&{
+        .def("set_attr_vec_bool", [](Operator &op, const string &name, const std::vector<bool> &value)->Operator&{
             int len = value.size();
             std::vector<bool> tar;
-            for (int i=0; i < len; i++){
+            for (int i = 0; i < len; i++){
                 if (value[i])
                     tar.push_back(true);
                 else
@@ -350,11 +350,11 @@ PYBIND11_MODULE(ge, m)
         .def("set_attr_vec_tensor", 
             (Operator & (Operator::*)(const string &, const std::vector<Tensor> &)) & Operator::SetAttr)
         .def("set_attr_vec_uint8", 
-            [](Operator &op, const string &name, const std::vector<uint8_t> &value) -> Operator&{
+            [](Operator &op, const string &name, const std::vector<uint8_t> &value)->Operator&{
             int len = value.size();
             std::vector<uint8_t> tar;
             uint8_t tmp;
-            for (int i=0; i < len; i++){
+            for (int i = 0; i < len; i++){
                 tmp = (uint8_t) value[i];
                 tar.push_back(tmp);
             }
@@ -363,17 +363,17 @@ PYBIND11_MODULE(ge, m)
         .def("set_attr_vec_vec_int64",
             (Operator & (Operator::*)(const string &, const std::vector<std::vector<int64_t> > &)) & Operator::SetAttr)
         .def("set_attr_vec_dtype", 
-            [](Operator &op, const string &name, const std::vector<DataType> &value) -> Operator&{
+            [](Operator &op, const string &name, const std::vector<DataType> &value)->Operator&{
             int len = value.size();
             std::vector<ge::DataType> tar;
             ge::DataType tmp;
-            for (int i=0; i < len; i++){
+            for (int i = 0; i < len; i++){
                 tmp = (ge::DataType) value[i];
                 tar.push_back(tmp);
             }
             return op.SetAttr(name, tar);
         })
-        .def("set_attr_dtype", [](Operator &op, const string &name, const DataType &value) -> Operator&{
+        .def("set_attr_dtype", [](Operator &op, const string &name, const DataType &value)->Operator&{
             ge::DataType tar = (ge::DataType) value;
             return op.SetAttr(name, tar);
         })
@@ -541,11 +541,11 @@ PYBIND11_MODULE(ge, m)
         .def("set_data", (graphStatus(Tensor::*)(const std::vector<std::string> &)) & Tensor::SetData)
         
         .def("get_data",
-            [](Tensor &ts) -> py::list {
+            [](Tensor &ts)->py::list {
                 py::list v_data;
                 uint8_t *data = ts.GetData();
                 size_t size = ts.GetSize();
-                for (int i=0; i < size; ++i) {
+                for (int i = 0; i < size; ++i) {
                     v_data.append(data[i]);
                 }
                 return v_data;
@@ -565,7 +565,7 @@ PYBIND11_MODULE(ge, m)
         .def("get_shape", &TensorDesc::GetShape)
         .def("set_unknown_dim_num_shape", &TensorDesc::SetUnknownDimNumShape)
         .def("set_shape_range", &TensorDesc::SetShapeRange)
-        .def("get_shape_range", [](TensorDesc &tensorDesc) -> py::tuple{
+        .def("get_shape_range", [](TensorDesc &tensorDesc)->py::tuple{
             std::vector<std::pair<int64_t, int64_t> > range;
             graphStatus status = tensorDesc.GetShapeRange(range);
             return py::make_tuple(range, status);
