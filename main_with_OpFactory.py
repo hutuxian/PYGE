@@ -184,7 +184,7 @@ def test_random():
     input_random = []
     input_random.append(input_tensor)
 
-    # 构图
+    # build graph
     np_in = np.array([2, 2, 2, 2]).astype(np.int32)
     data_buffer = np.frombuffer(np_in.tobytes(), dtype=np.uint8)
     shape_tensor_desc = ge.TensorDesc(ge.Shape([4]), ge.FORMAT_NHWC, ge.DT_INT32)
