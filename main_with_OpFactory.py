@@ -169,6 +169,9 @@ def test_op_factory():
 
 
 def test_random():
+    """
+    op random
+    """
     config = {"ge.exec.deviceId": "0", "ge.graphRunMode": "1"}
     options = {}
     ge_handle = PyGe(config, options)
