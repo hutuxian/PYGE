@@ -3,7 +3,7 @@
 """
 import os
 import h5py
-import matplotlib.image as mping
+import matplotlib.image as mpimg
 import numpy as np
 import unittest
 import ge
@@ -99,7 +99,7 @@ class DataSet(object):
 
             # value
             path = self.img_path + '/{}'
-            image = mping.imread(path.format(image_path))
+            image =mpimg.imread(path.format(image_path))
             w = image.shape[0]
             h = image.shape[1]
             c = 1 if len(image.shape) == 2 else image.shape[2]
@@ -136,7 +136,7 @@ def build_dataset(ds_file):
 
 def load_one_set(img_file):
     x = []
-    image = mping.imread(img_file)
+    image = mpimg.imread(img_file)
     w = image.shape[0]
     h = image.shape[1]
     c = 1 if len(image.shape) == 2 else image.shape[2]
@@ -149,7 +149,7 @@ class TestGe(unittest.TestCase):
     def debug_info(self, ge_handle, info_list, info):
         f = open("./debug.log", "a+")
         for i in range(len(info_list)):
-            data = ge_handle.set_tensor_data(info[i])
+            data = ge_handle.get_tensor_data(info[i])
             f.write('{}::{} {} {}\n\n'.format(info_list[i], info_list[i].get_tensor_desc().get_shape().get_dims(), data.shape, data))
         f.close()
 

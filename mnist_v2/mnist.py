@@ -85,7 +85,7 @@ class PyGe(object):
                 "var_value": None,
                 "var_desc": None,
                 "var_tensor": None, 
-                "x": None, "x_relu": None, "y_tanh": None
+                "x": None, "x_relu": None, "y_sigmoid": None
             },
             "fc_10": {
                 "in_shape": [1, 784], "out_shape": [1, 10],
@@ -95,7 +95,7 @@ class PyGe(object):
                 "var_value": None,
                 "var_desc": None,
                 "var_tensor": None,
-                "x": None, "x_relu": None, "y_tanh": None
+                "x": None, "x_relu": None, "y_sigmoid": None
             },
             "softmax": {
                 "fmt": ge.FORMAT_NHWC, "dt": ge.DT_FLOAT16
@@ -219,7 +219,7 @@ class PyGe(object):
     def update_fc_activate_input(self, n_out, tensor):  
         key = "fc_" + str(n_out)      
         self.ge_param[key]["x_relu"] = tensor[0]
-        self.ge_param[key]["y_tanh"] = tensor[1]
+        self.ge_param[key]["y_sigmoid"] = tensor[1]
 
     def update_conv2d_activate_input(self, filters, tensor):  
         key = "conv2D_" + str(filters)      
@@ -479,21 +479,21 @@ class PyGe(object):
     def ge_relu_grad(self, graph, name, gradients, features):
         relu_grad = ge.OperatorFactory.create_operator(name+"_relu_grad", "Relu6Grad") \
             .set_input("gradients", gradients) \
-            .set_input("feature", features)
+            .set_input("features", features)
         graph.add_op(relu_grad)
         return relu_grad
 
-    def ge_tanh(self, graph, name, x):
-        tanh = ge.OperatorFactory.create_operator(name+"_tanh", "Sigmoid").set_input("x", x)
-        graph.add_op(tanh)
-        return tanh
+    def ge_sigmoid(self, graph, name, x):
+        sigmoid = ge.OperatorFactory.create_operator(name+"_sigmoid", "Sigmoid").set_input("x", x)
+        graph.add_op(sigmoid)
+        return sigmoid
     
-    def ge_tanh_grad(self, graph, name, y, dy):
-        tanh_grad = ge.OperatorFactory.create_operator(name+"_tanh_grad", "SigmoidGrad") \
+    def ge_sigmoid_grad(self, graph, name, y, dy):
+        sigmoid_grad = ge.OperatorFactory.create_operator(name+"_sigmoid_grad", "SigmoidGrad") \
             .set_input("y", y) \
-            .set_input("dy", y)
-        graph.add_op(tanh_grad)
-        return tanh_grad
+            .set_input("dy", dy)
+        graph.add_op(sigmoid_grad)
+        return sigmoid_grad
 
     def mnist_forward(self, graph, is_train=False):
         # conv2D 0 [N, 28, 28, 1] conv2d [32, 5, 5, 1] -> [N, 28, 28, 32]
@@ -512,16 +512,16 @@ class PyGe(object):
         reshape_pool = self.ge_flatten(data_x, "fc_100_forward/flatten")
         fc_100 = self.layer_fc(graph, reshape_pool, num_out=100, transpose_x1=0, transpose_x2=0)
         # dropout = self.ge_drop_out(graph, "fc_100", fc_100, self.ge_param["fc_100"]["in_shape"], 1, rate=0.7)
-        fc_100_relu = self.ge_tanh(graph, "fc_100", fc_100)
+        fc_100_relu = self.ge_sigmoid(graph, "fc_100", fc_100)
         """
         # fc 10 [N, 100] [100, 10] -> [N, 10]
         reshape_pool = self.ge_flatten(data_x, "fc_10_forward/flatten")
         fc_10 = self.layer_fc(graph, reshape_pool, num_out=10, transpose_x1=0, transpose_x2=0)
-        fc_10_relu = self.ge_tanh(graph, "fc_10", fc_10)
+        fc_10_relu = self.ge_sigmoid(graph, "fc_10", fc_10)
         # softmax [N, 10] -> [N, 10]
         if is_train:
             soft_m = self.layer_softmax(graph, fc_10_relu)
-            # cross entropy [N, 10] -> [N, 10]
+            # cross entropy [N, 10] , [N, 10]
             data_labels = ge.OperatorFactory.create_operator("labels", "Data").set_attr_int64("index", 1)
             cross = self.layer_loss(graph, fc_10_relu, data_labels)
             graph.set_inputs([data_x, data_labels]).set_outputs([cross, fc_10, fc_10_relu, fc_10, reshape_pool, fc_10, fc_10_relu, fc_10, soft_m, fc_10, fc_10, fc_10, data_x, data_labels])
@@ -555,9 +555,9 @@ class PyGe(object):
         graph.add_op(fc_grad)
         return fc_grad
 
-    def layer_avgpool_grad(self, graph, name, orig_input_shape, input_grad, ksize):
+    def layer_avgpool_grad(self, graph, name, filters, input_grad, ksize):
         key = "pool"
-        in_shape = 'shape_tensor_' + str(filter)
+        in_shape = 'shape_tensor_' + str(filters)
         orig_input_shape = ge.OperatorFactory.create_operator(key+in_shape, "Constant") \
             .set_attr_tensor("value", self.ge_param[key][in_shape][0])
         orig_input_shape.update_output_desc("y", self.ge_param[key][in_shape][0].get_tensor_desc())
@@ -608,13 +608,13 @@ class PyGe(object):
                                                           "Data").set_attr_int64("index", 0)
         key = "fc_10"
         fc_100_y_relu = ge.OperatorFactory.create_operator("fc_100/y_relu", 
-                                                          "Constant").set_attr_tensor("value", self.ge_param[key]["y_tanh"])
-        fc_100_y_relu.update_output_desc("y", self.ge_param[key]["y_tanh"].get_tensor_desc())
+                                                          "Constant").set_attr_tensor("value", self.ge_param[key]["y_sigmoid"])
+        fc_100_y_relu.update_output_desc("y", self.ge_param[key]["y_sigmoid"].get_tensor_desc())
         graph.add_op(fc_100_y_relu)
 
         # [N, 100] × [N, 100] ->
         # fc_100_relu_grad = self.ge_relu_grad(graph, "fc_100", fc_10_grad, fc_100_x_relu)
-        fc_10_relu_grad = self.ge_tanh_grad(graph, "fc_100", fc_100_y_relu, softmax_grad)
+        fc_10_relu_grad = self.ge_sigmoid_grad(graph, "fc_100", fc_100_y_relu, softmax_grad)
 
         # fc 10
         key = "fc_10"
