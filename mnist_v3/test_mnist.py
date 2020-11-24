@@ -10,6 +10,8 @@ import ge
 from mnist import PyGe
 
 PATH = "./data/"
+GRAPH_MNIST = 1
+GRAPH_INIT = 0
 
 def check_ret(message, ret):
     """
@@ -99,7 +101,7 @@ class DataSet(object):
 
             # value
             path = self.img_path + '/{}'
-            image =mpimg.imread(path.format(image_path))
+            image = mpimg.imread(path.format(image_path))
             w = image.shape[0]
             h = image.shape[1]
             c = 1 if len(image.shape) == 2 else image.shape[2]
@@ -150,32 +152,77 @@ class TestGe(unittest.TestCase):
         f = open("./debug.log", "a+")
         for i in range(len(info_list)):
             data = ge_handle.get_tensor_data(info[i])
-            f.write('{}::{} {} {}\n\n'.format(info_list[i], info_list[i].get_tensor_desc().get_shape().get_dims(), data.shape, data))
+            f.write('{}:: {} {} {}\n\n'.format(info_list[i], info[i].get_tensor_desc().get_shape().get_dims(), data.shape, data))
         f.close()
 
-    def predict(self, ge_handle, inputs):
+    def model(self, ge_handle, inputs):
+        # forward and backward
+        graph = ge.Graph("mnist")
+        out_forward = ge_handle.mnist_forward(graph, is_train=True)
+        ge_handle.mnist_backprop(graph, out_forward)
+        ge_handle.add_graph(GRAPH_MNIST, graph)
+        # init
+        graph_init = ge.Graph("init_mnist")
+        var_desc_init, var_name_init, var_tensor_init = ge_handle.construct_var_list()
+        ge_handle.init_graph(graph_init, var_desc_init, var_name_init, var_tensor_init)
+        ge_handle.add_graph(GRAPH_INIT, graph_init)
+        # run
+        ge_handle.run_graph(GRAPH_INIT, [], is_rebuild=True)
+        outputs_forward = ge_handle.run_graph(GRAPH_MNIST, inputs)
+        ge_handle.update_net_params(outputs_forward)
+
+    def predict(self, ge_handle, inputs, is_train=False):
+        # forward
         graph = ge.Graph("mnist")
         ge_handle.mnist_forward(graph)
-        ge_handle.add_graph(1, graph)
-        outputs_forward = ge_handle.run_graph(1, inputs)
+        ge_handle.add_graph(GRAPH_MNIST, graph)
+        # init
+        graph_init = ge.Graph("init_mnist")
+        var_desc_init, var_name_init, var_tensor_init = ge_handle.construct_var_list()
+        ge_handle.init_graph(graph_init, var_desc_init, var_name_init, var_tensor_init)
+        ge_handle.add_graph(GRAPH_INIT, graph_init)
+        # run
+        ge_handle.run_graph(GRAPH_INIT, [], is_rebuild=True)
+        outputs_forward = ge_handle.run_graph(GRAPH_MNIST, inputs, is_rebuild=True)
         ge_handle.print("predict", outputs_forward[0], np.float16, print_data=1)
         return ge_handle.get_tensor_data(outputs_forward[0])
     
-    def train(self, ge_handle, inputs, epoch=5):
+    def train(self, ge_handle, x_split, y_split, batch=1, epoch=5, num_iterations=20):
         if os.path.exists("./debug.log"):
             os.remove("./debug.log")
-        for i in range(epoch):
-            print("============ train {} times ==================\n".format(i+1))
-            graph = ge.Graph("mnist")
-            ge_handle.mnist_forward(graph, is_train=True)
-            ge_handle.add_graph(1, graph)
-            outputs_forward = ge_handle.run_graph(1, inputs)
-            ge_handle.update_input_params(inputs, outputs_forward)
-            graph_back = ge.Graph("mnist_back")
-            ge_handle.mnist_backprop(graph_back)
-            ge_handle.add_graph(2, graph_back)
-            outputs_back = ge_handle.run_graph(2, [outputs_forward[1]])
-            ge_handle.update_net_params(outputs_back)
+
+        in_tensor_x = ge_handle.gen_tensor(x_split[0].shape, x_split[0], fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
+        in_tensor_y = ge_handle.gen_tensor(y_split[0].shape, y_split[0], fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
+        inputs = [in_tensor_x, in_tensor_y]
+
+        self.model(ge_handle, inputs)
+
+        for j in range(epoch):
+            print("============ epoch {} ==================\n".format(j+1))
+            for i in range(batch):
+                in_tensor_x = ge_handle.gen_tensor(x_split[i].shape, x_split[i], fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
+                in_tensor_y = ge_handle.gen_tensor(y_split[i].shape, y_split[i], fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
+                real_batch_size = x_split[i].shape[0]
+                inputs = [in_tensor_x, in_tensor_y]
+                ge_handle.update_sample_param(batch_size=real_batch_size)
+                for i in range(num_iterations):
+                    print("============ train {} times ==================\n".format(i+1))
+                    # init forward
+                    graph_init = ge.Graph("init_mnist")
+                    var_desc_init, var_name_init, var_tensor_init = ge_handle.construct_var_list()
+                    ge_handle.init_graph(graph_init, var_desc_init, var_name_init, var_tensor_init)
+                    ge_handle.add_graph(GRAPH_INIT, graph_init)
+                    ge_handle.run_graph(GRAPH_INIT, [], is_rebuild=True)
+                    # run mnist
+                    outputs = ge_handle.run_graph(GRAPH_MNIST, inputs)
+                    prints = []
+                    data = ge_handle.get_tensor_data(outputs[8])
+                    for j in range(data.size):
+                        if j % 10 == 0 and j != 0:
+                            prints += ['|']
+                        prints += [data[j]]
+                    print("softmax::", prints)
+                    ge_handle.update_net_params(outputs)
 
     def test_000_dataset(self):
         train_set_x, train_set_y = build_dataset("train_mnist.h5")
@@ -185,7 +232,7 @@ class TestGe(unittest.TestCase):
         """
         network mnist by GE
         |============= conv ============== | ===== pool ===== | ===== conv ===== | ===== pool ===== | ===== fc ===== | === softmax === |
-        |input: 28×28×1 -> cells: 28×28×32 |  cells: 14×14×32 |  cells: 14×14×64 |  cells:  7×7×64  |   1×1×100      |     1×1×10      |
+        |input: 28×28×1 -> cells: 28×28×32 |  cells: 14×14×32 |  cells: 14×14×64 |  cells:  7×7×64  |   1×1×1024     |     1×1×10      |
         |  Conv     : 5×5                  |   Pool   : 2×2   |    conv   : 5×5  |   Pool   : 2×2   |                |                 |
         |  filters  : 32                   |   stride : 2     |    filter :64    |   stride : 2     |   dropout 0.5  |                 |
         |  padding  : 2                    |                  |    padding:2     |                  |                |                 |
@@ -193,23 +240,84 @@ class TestGe(unittest.TestCase):
         """
         config = {"ge.exec.deviceId": "0", "ge.graphRunMode": "1", "ge.exec.precision_mode": "allow_mix_precision"}
         options = {}
-        ge_handle =PyGe(config, options)
+        ge_handle = PyGe(config, options)
 
-        inputs = []
         train_set_x, train_set_y = build_dataset("train_mnist.h5")
         in_shape_x = train_set_x.shape
         in_shape_y = train_set_y.shape
         print(in_shape_x[0], in_shape_x, in_shape_y)
-        in_tensor_x = ge_handle.gen_tensor(in_shape_x, train_set_x, fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
-        inputs.append(in_tensor_x)
-        in_tensor_y = ge_handle.gen_tensor(in_shape_y, train_set_y, fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
-        inputs.append(in_tensor_y)
 
-        ge_handle.init_sample_param(28, 28, 1, batch_size=in_shape_x[0])
+        # split sample : x (200, 28, 28, 1)  y (200, 10)
+        batch_size = 100
+        is_zero = in_shape_x[0] % batch_size
+        n = in_shape_x[0] // batch_size
+        num = n + 1 if is_zero else n
 
+        np.random.seed(0)
+        np.random.shuffle(train_set_x)
+        np.random.seed(0)
+        np.random.shuffle(train_set_y)
+
+        x_split = np.array_split(train_set_x, num, axis=0)
+        y_split = np.array_split(train_set_y, num, axis=0)
+
+        real_batch_size = x_split[0].shape[0]
+        ge_handle.init_sample_param(28, 28, 1, batch_size=real_batch_size)
+        ge_handle.init_conv2d_param(32)
+        ge_handle.init_conv2d_param(64)
+        ge_handle.init_fc_param(1024)
         ge_handle.init_fc_param(10)
+        ge_handle.init_pool_param()
 
-        self.train(ge_handle, inputs, epoch=100)
+        self.train(ge_handle, x_split, y_split, batch=num, epoch=2, num_iterations=50)
+
+        # save w and b
+        ge_handle.save_paras()
+        ge_handle.remove_graph(GRAPH_MNIST)
+
+        img_file = "./test_images/2_0.png"
+        img_x = load_one_set(img_file)
+        in_tensor = ge_handle.gen_tensor(img_x.shape, img_x, fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
+        predict_inputs = [in_tensor]
+        prediction = self.predict(ge_handle, predict_inputs)
+        list_pre = prediction.tolist()
+        print("{} prediction is {}".format(img_file, list_pre.index(max(list_pre))))
+
+        img_file = "./test_images/0_11.png"
+        img_x = load_one_set(img_file)
+        in_tensor = ge_handle.gen_tensor(img_x.shape, img_x, fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
+        predict_inputs = [in_tensor]
+        prediction = self.predict(ge_handle, predict_inputs)
+        list_pre = prediction.tolist()
+        print("{} prediction is {}".format(img_file, list_pre.index(max(list_pre))))
+
+        img_file = "./test_images/7_10.png"
+        img_x = load_one_set(img_file)
+        in_tensor = ge_handle.gen_tensor(img_x.shape, img_x, fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
+        predict_inputs = [in_tensor]
+        prediction = self.predict(ge_handle, predict_inputs)
+        list_pre = prediction.tolist()
+        print("{} prediction is {}".format(img_file, list_pre.index(max(list_pre))))
+
+        img_file = "./test_images/9_35.png"
+        img_x = load_one_set(img_file)
+        in_tensor = ge_handle.gen_tensor(img_x.shape, img_x, fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
+        predict_inputs = [in_tensor]
+        prediction = self.predict(ge_handle, predict_inputs)
+        list_pre = prediction.tolist()
+        print("{} prediction is {}".format(img_file, list_pre.index(max(list_pre))))
+
+    def test_002_mnist(self):
+        config = {"ge.exec.deviceId": "0", "ge.graphRunMode": "1", "ge.exec.precision_mode": "allow_mix_precision"}
+        options = {}
+        ge_handle = PyGe(config, options)
+
+        ge_handle.init_sample_param(28, 28, 1, batch_size=1)
+        ge_handle.init_conv2d_param(32, load_from_bin=True)
+        ge_handle.init_conv2d_param(64, load_from_bin=True)
+        ge_handle.init_fc_param(1024, load_from_bin=True)
+        ge_handle.init_fc_param(10, load_from_bin=True)
+        ge_handle.init_pool_param()
 
         img_file = "./test_images/2_0.png"
         img_x = load_one_set(img_file)
@@ -245,5 +353,5 @@ class TestGe(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    suite = switch_cases(TestGe, ["001"])
+    suite = switch_cases(TestGe, ["001", "002"])
     unittest.TextTestRunner(verbosity=2).run(suite)

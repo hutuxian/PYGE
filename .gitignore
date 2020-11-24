@@ -117,4 +117,7 @@ dmypy.json
 .vscode/
 .VSCodeCounter
 *.png
+omit
+mnist_v3/test_images
+mnist_v3/train_images
 
