@@ -429,7 +429,7 @@ class PyGe(object):
         self.update_op_format(op, self.ge_param[key]["fmt"])
         self.update_op_datatype(op, self.ge_param[key]["dt"])
 
-    def ge_reshape(self, graph, x, shape, name):
+    def ge_reshape(self, x, shape, name):
         in_shape_tensor = self.gen_tensor([len(shape),], shape, fmt=ge.FORMAT_ND, dt=ge.DT_INT32)
         const_shape = ge.OperatorFactory.create_operator(name + '_const_shape',
                                                          "Constant").set_attr_tensor("value", in_shape_tensor)
@@ -442,7 +442,7 @@ class PyGe(object):
         reshape = ge.OperatorFactory.create_operator(name + "_flatten", "Flatten").set_input("x", x)
         return reshape
 
-    def ge_var_init(self, graph, var_desc, var_name, var_tensor):
+    def ge_var_init(self, var_desc, var_name, var_tensor):
         var_desc.set_real_dim_cnt(var_desc.get_shape().get_dim_num())
         tmp_var_name = var_name + "_const"
         var_constant = ge.OperatorFactory.create_operator(tmp_var_name, "Constant").set_attr_tensor("value", var_tensor)
@@ -458,12 +458,14 @@ class PyGe(object):
     def init_graph(self, graph, var_descs, var_names, var_tensors):
         inputs, outputs = [], []
         for i in range(len(var_descs)):
-            var_init = self.ge_var_init(graph, var_descs[i], var_names[i], var_tensors[i])
+            var_init = self.ge_var_init(var_descs[i], var_names[i], var_tensors[i])
             inputs.append(var_init)
         graph.set_inputs(inputs).set_outputs(outputs)
 
     def create_var(self, graph, var_desc, var_name):
         var_op_list = []
+        if len(var_desc) == 0:
+            return None
         for i in range(len(var_desc)):
             var_op = ge.OperatorFactory.create_operator(var_name[i], "Variable")
             var_op.update_output_desc("y", var_desc[i])
@@ -697,7 +699,7 @@ class PyGe(object):
         key = "pool"
         # [N, 3136] -> [N, 7, 7, 64] -> [N, 14, 14, 64]
         input_shapes = self.ge_param[key]["out_shape_64"]
-        fc_1024_grad_reshape = self.ge_reshape(graph, fc_1024_grad, input_shapes, "pool_1_grad")
+        fc_1024_grad_reshape = self.ge_reshape(fc_1024_grad, input_shapes, "pool_1_grad")
         graph.add_op(fc_1024_grad_reshape)
         pool_1_grad = self.layer_avgpool_grad(graph, "pool_1_grad", 64, fc_1024_grad_reshape, self.ge_param[
             "pool"]["ksize_64"])

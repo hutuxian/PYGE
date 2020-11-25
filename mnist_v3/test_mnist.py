@@ -89,7 +89,7 @@ class DataSet(object):
 
     def make_dataset_label_one_hot(self):
         x, y, classs = [], [], []
-        for i, image_path in enumerate(os.listdir(self.img_path)):
+        for _, image_path in enumerate(os.listdir(self.img_path)):
             # label to one-hot
             label = int(image_path.split('_')[0])
             # label value
@@ -126,7 +126,7 @@ class DataSet(object):
         # labels
         train_set_y = np.array(train_dataset["train_set_y"][:])
         # classes
-        train_classes = np.array(train_dataset["list_classes"][:])
+        # train_classes = np.array(train_dataset["list_classes"][:])
 
         return train_set_x_orig, train_set_y
 
