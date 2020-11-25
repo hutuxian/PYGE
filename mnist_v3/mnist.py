@@ -464,8 +464,6 @@ class PyGe(object):
 
     def create_var(self, graph, var_desc, var_name):
         var_op_list = []
-        if len(var_desc) == 0:
-            return None
         for i in range(len(var_desc)):
             var_op = ge.OperatorFactory.create_operator(var_name[i], "Variable")
             var_op.update_output_desc("y", var_desc[i])
