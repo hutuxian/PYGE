@@ -35,8 +35,8 @@ def get_class_methods(class_name):
 
     return methods
 
-def get_test_case_by_list(suite, case_class, methods, list):
-    for case_no in list:
+def get_test_case_by_list(suite, case_class, methods, listx):
+    for case_no in listx:
         for method in methods:
             if method.find(case_no) >= 0:
                 suite.addTest(case_class(method))
@@ -171,7 +171,7 @@ class TestGe(unittest.TestCase):
         outputs_forward = ge_handle.run_graph(GRAPH_MNIST, inputs)
         ge_handle.update_net_params(outputs_forward)
 
-    def predict(self, ge_handle, inputs, is_train=False):
+    def predict(self, ge_handle, inputs):
         # forward
         graph = ge.Graph("mnist")
         ge_handle.mnist_forward(graph)

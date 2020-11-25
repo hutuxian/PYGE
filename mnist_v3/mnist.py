@@ -246,7 +246,8 @@ class PyGe(object):
         key = "conv2D_" + str(filters)
         self.ge_param[key]['lr'] = 0.005
         self.ge_param[key]["w"] -= self.ge_param[key]['lr']*self.get_tensor_data(dw)
-        self.ge_param[key]["b"] -= self.ge_param[key]['lr']*self.get_tensor_data(db)/self.ge_param["sample"]["batch_size"]
+        self.ge_param[key]["b"] -= self.ge_param[key]['lr']*self.get_tensor_data(db)/self.ge_param[
+            "sample"]["batch_size"]
         self.ge_param[key]["var_tensor"][0] = self.gen_tensor(self.ge_param[key]['w_shape'], 
                                                               self.ge_param[key]["w"], 
                                                               fmt=self.ge_param[key]["fmt"],
@@ -260,7 +261,8 @@ class PyGe(object):
         key = "fc_" + str(n_out)
         self.ge_param[key]['lr'] = 0.005
         self.ge_param[key]["w"] -= self.ge_param[key]['lr']*self.get_tensor_data(dw)
-        self.ge_param[key]["b"] -= self.ge_param[key]['lr']*self.get_tensor_data(db)/self.ge_param["sample"]["batch_size"]
+        self.ge_param[key]["b"] -= self.ge_param[key]['lr']*self.get_tensor_data(db)/self.ge_param[
+            "sample"]["batch_size"]
         self.ge_param[key]["var_tensor"][0] = self.gen_tensor(self.ge_param[key]['w_shape'], 
                                                               self.ge_param[key]["w"], 
                                                               fmt=self.ge_param[key]["fmt"],
@@ -467,7 +469,7 @@ class PyGe(object):
             var_op.update_output_desc("y", var_desc[i])
             graph.add_op(var_op)
             var_op_list.append(var_op)
-        return var_op_list[0] if i==0 else var_op_list
+        return var_op_list[0] if i == 0 else var_op_list
 
     def layer_conv2D(self, graph, x, filters):
         key = "conv2D_" + str(filters)
@@ -537,7 +539,7 @@ class PyGe(object):
 
     def ge_relu(self, graph, name, x):
         # max(x, 0)
-        relu = ge.OperatorFactory.create_operator(name+"_relu", "Relu").set_input("x", x)
+        relu = ge.OperatorFactory.create_operator(name + "_relu", "Relu").set_input("x", x)
         graph.add_op(relu)
         return relu
 
@@ -572,14 +574,14 @@ class PyGe(object):
             # cross entropy [N, 10] , [N, 10]
             data_labels = ge.OperatorFactory.create_operator("labels", "Data").set_attr_int64("index", 1)
             cross = self.layer_loss(graph, fc_10, data_labels)
-            return {'data_x': data_x, 'loss': cross, 'conv2d_0': conv2d_0, 'pool_0': pool_0, 'conv2d_1': conv2d_1, 'pool_1':reshape_pool,
-                    'fc_0': fc_1024, 'fc_0_relu': fc_1024_relu, 'softmax': soft_m}
+            return {'data_x': data_x, 'loss': cross, 'conv2d_0': conv2d_0, 'pool_0': pool_0, 'conv2d_1': conv2d_1,
+                    'pool_1':reshape_pool, 'fc_0': fc_1024, 'fc_0_relu': fc_1024_relu, 'softmax': soft_m}
         else:
             soft_m = self.layer_softmax(graph, fc_10)
             graph.set_inputs([data_x]).set_outputs([soft_m])
 
     def ge_matmul(self, name, x1, x2, idx_1=0, idx_2=0, b=None, transpose_x1=False, transpose_x2=False):
-        matmul = ge.OperatorFactory.create_operator(name + "_matmul" ,
+        matmul = ge.OperatorFactory.create_operator(name + "_matmul",
                                                     "MatMul").set_input("x1", x1, idx_1) \
             .set_input("x2", x2, idx_2) \
             .set_attr_bool("transpose_x1", transpose_x1) \
@@ -597,9 +599,11 @@ class PyGe(object):
         graph.add_op(softmax_grad)
         return softmax_grad
 
-    def layer_fc_grad(self, graph, name, x1, x2, idx_1=0, idx_2=0, b=None, num_out=10, transpose_x1=False, transpose_x2=False):
+    def layer_fc_grad(self, graph, name, x1, x2, idx_1=0, idx_2=0, b=None, num_out=10, transpose_x1=False,
+        transpose_x2=False):
         key = "fc_" + str(num_out)
-        fc_grad = self.ge_matmul(key + '_'+name, x1, x2, idx_1, idx_2, b, transpose_x1=transpose_x1, transpose_x2=transpose_x2)
+        fc_grad = self.ge_matmul(key + '_' + name, x1, x2, idx_1, idx_2, b, transpose_x1=transpose_x1, 
+            transpose_x2=transpose_x2)
         self.update_op_desc(fc_grad, key)
         graph.add_op(fc_grad)
         return fc_grad
@@ -607,7 +611,7 @@ class PyGe(object):
     def layer_avgpool_grad(self, graph, name, filters, input_grad, ksize):
         key = "pool"
         in_shape = 'shape_tensor_' + str(filters)
-        orig_input_shape = ge.OperatorFactory.create_operator(key+in_shape, "Constant") \
+        orig_input_shape = ge.OperatorFactory.create_operator(key + in_shape, "Constant") \
             .set_attr_tensor("value", self.ge_param[key][in_shape][0])
         orig_input_shape.update_output_desc("y", self.ge_param[key][in_shape][0].get_tensor_desc())
         graph.add_op(orig_input_shape)
@@ -624,7 +628,7 @@ class PyGe(object):
     def layer_conv2D_filter_grad(self, graph, filters, x, out_backprop):
         key = "conv2D_" + str(filters)
 
-        filter_size = ge.OperatorFactory.create_operator(key+"_grad_filter/filter_size", "Constant") \
+        filter_size = ge.OperatorFactory.create_operator(key + "_grad_filter/filter_size", "Constant") \
             .set_attr_tensor("value", self.ge_param[key]["w_shape_tensor"])
         graph.add_op(filter_size)
 
@@ -669,7 +673,8 @@ class PyGe(object):
         fc_10_db = self.ge_matmul("fc_10_db", db_x1, softmax_grad, idx_2=1, transpose_x1=0, transpose_x2=0)
         fc_10_w = self.ge_param[key]["var_w"]
         # [N, 10] x [256, 10] -> [N, 256]
-        fc_10_grad = self.layer_fc_grad(graph, "fc_10_grad", softmax_grad, fc_10_w, idx_1=1, num_out=10, transpose_x1=0, transpose_x2=1)
+        fc_10_grad = self.layer_fc_grad(graph, "fc_10_grad", softmax_grad, fc_10_w, idx_1=1, num_out=10,
+            transpose_x1=0, transpose_x2=1)
 
         # fc 1024
         key = "fc_1024"
@@ -685,7 +690,8 @@ class PyGe(object):
         fc_1024_db = self.ge_matmul("fc_1024_db", db_x1, fc_1024_relu_grad, transpose_x1=0, transpose_x2=0)
         fc_1024_w = self.ge_param[key]["var_w"]
         # [N, 1024] × [3136, 1024] -> [N, 3136]
-        fc_1024_grad = self.layer_fc_grad(graph, "fc_1024_grad", fc_1024_relu_grad, fc_1024_w, num_out=1024, transpose_x1=0, transpose_x2=1)
+        fc_1024_grad = self.layer_fc_grad(graph, "fc_1024_grad", fc_1024_relu_grad, fc_1024_w, num_out=1024,
+            transpose_x1=0, transpose_x2=1)
 
         # pool 1
         key = "pool"
@@ -693,7 +699,8 @@ class PyGe(object):
         input_shapes = self.ge_param[key]["out_shape_64"]
         fc_1024_grad_reshape = self.ge_reshape(graph, fc_1024_grad, input_shapes, "pool_1_grad")
         graph.add_op(fc_1024_grad_reshape)
-        pool_1_grad = self.layer_avgpool_grad(graph, "pool_1_grad", 64, fc_1024_grad_reshape, self.ge_param["pool"]["ksize_64"])
+        pool_1_grad = self.layer_avgpool_grad(graph, "pool_1_grad", 64, fc_1024_grad_reshape, self.ge_param[
+            "pool"]["ksize_64"])
 
         # conv2D 1
         key = "conv2D_64"
@@ -717,7 +724,8 @@ class PyGe(object):
         # pool 0
         key = "pool"
         # [N, 14, 14, 32] -> [N, 28, 28, 32]
-        pool_0_grad = self.layer_avgpool_grad(graph, "pool_0_grad", 32, conv2d_64_grad_in, self.ge_param["pool"]["ksize_32"])
+        pool_0_grad = self.layer_avgpool_grad(graph, "pool_0_grad", 32, conv2d_64_grad_in,
+            self.ge_param["pool"]["ksize_32"])
         # conv2D 0 : in = [N, 28, 28, 1], out = [32, 5, 5, 1]
         key = "conv2D_32"
         # relu
