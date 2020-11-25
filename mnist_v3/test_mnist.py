@@ -184,9 +184,9 @@ class TestGe(unittest.TestCase):
         # run
         ge_handle.run_graph(GRAPH_INIT, [], is_rebuild=True)
         outputs_forward = ge_handle.run_graph(GRAPH_MNIST, inputs, is_rebuild=True)
-        ge_handle.print("predict", outputs_forward[0], np.float16, print_data=1)
+        ge_handle.prints("predict", outputs_forward[0], np.float16, print_data=1)
         return ge_handle.get_tensor_data(outputs_forward[0])
-    
+
     def train(self, ge_handle, x_split, y_split, batch=1, epoch=5, num_iterations=20):
         if os.path.exists("./debug.log"):
             os.remove("./debug.log")

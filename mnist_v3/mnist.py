@@ -244,7 +244,7 @@ class PyGe(object):
 
     def update_conv2d_params(self, filters, dw, db):
         key = "conv2D_" + str(filters)
-        self.ge_param[key]['lr'] = 0.01
+        self.ge_param[key]['lr'] = 0.005
         self.ge_param[key]["w"] -= self.ge_param[key]['lr']*self.get_tensor_data(dw)
         self.ge_param[key]["b"] -= self.ge_param[key]['lr']*self.get_tensor_data(db)/self.ge_param["sample"]["batch_size"]
         self.ge_param[key]["var_tensor"][0] = self.gen_tensor(self.ge_param[key]['w_shape'], 
@@ -258,7 +258,7 @@ class PyGe(object):
         
     def update_fc_params(self, n_out, dw, db):
         key = "fc_" + str(n_out)
-        self.ge_param[key]['lr'] = 0.01
+        self.ge_param[key]['lr'] = 0.005
         self.ge_param[key]["w"] -= self.ge_param[key]['lr']*self.get_tensor_data(dw)
         self.ge_param[key]["b"] -= self.ge_param[key]['lr']*self.get_tensor_data(db)/self.ge_param["sample"]["batch_size"]
         self.ge_param[key]["var_tensor"][0] = self.gen_tensor(self.ge_param[key]['w_shape'], 
@@ -302,7 +302,7 @@ class PyGe(object):
             dailation = 1
         return dailation
 
-    def print(self, msg, print_tensor, data_type, print_data=False):
+    def prints(self, msg, print_tensor, data_type, print_data=False):
         data = self.get_tensor_data(print_tensor, data_type)
         print('{}::'.format(msg), len(data), data.shape, print_tensor.get_size(), 
               print_tensor.get_tensor_desc().get_data_type(),
