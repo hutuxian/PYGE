@@ -42,30 +42,32 @@ class PyGe(object):
         # ge parameter initial
         self.ge_param = {
             "sample": {
-                "batch_size": 1, "h": 28, "w": 28, "channel": 1
+                "batch_size": 1, "h": 28, "w": 28, "channel": 1,
+                "lr": 0.02, "var": None, "desc": None, "tensor": None
             },
             "conv2D_32": {
                 "fmt": ge.FORMAT_NHWC, "dt": ge.DT_FLOAT16,
-                "w": None, "lr": 0.2, "b": None,
+                "w": None, "b": None, "w_acc": None, "b_acc": None,
                 "strides": (1, 1, 1, 1), "pads": (2, 2, 2, 2), 
                 "in_shape": [1, 28, 28, 1], "out_shape": [1, 28, 28, 32],
                 "in_shape_tensor": None, 
                 "w_shape": [32, 5, 5, 1], "b_shape": [25088, ], "w_shape_tensor": None,
-                "var_name": ["conv2d_0_w", "conv2d_0_lr", "conv2d_0_b"],
-                "var_value": None, "var_desc": None, "var_tensor": None,
+                "var_name": ["conv2d_0_w", "conv2d_0_b", "conv2d_0_w_acc", "conv2d_0_b_acc"],
+                "var_desc": None, "var_tensor": None,
                 "x": None, "x_act": None,
-                "var_w": None, "var_b": None
+                "var_w": None, "var_b": None, "var_w_acc": None, "var_b_acc": None
             },
             "conv2D_64": {
                 "fmt": ge.FORMAT_NHWC, "dt": ge.DT_FLOAT16,
-                "w": None, "lr": 0.2, "b": None, "strides": (1, 1, 1, 1), "pads": (2, 2, 2, 2),
+                "w": None, "b": None, "w_acc": None, "b_acc": None,
+                "strides": (1, 1, 1, 1), "pads": (2, 2, 2, 2),
                 "in_shape": [1, 14, 14, 32], "out_shape": [1, 14, 14, 64],
                 "in_shape_tensor": None,
                 "w_shape": [64, 5, 5, 32], "b_shape": [12544, ], "w_shape_tensor": None,
-                "var_name": ["conv2d_1_w", "conv2d_1_lr", "conv2d_1_b"],
-                "var_value": None, "var_desc": None, "var_tensor": None,
+                "var_name": ["conv2d_1_w", "conv2d_1_b", "conv2d_1_w_acc", "conv2d_1_b_acc"],
+                "var_desc": None, "var_tensor": None,
                 "x": None, "x_act": None,
-                "var_w": None, "var_b": None
+                "var_w": None, "var_b": None, "var_w_acc": None, "var_b_acc": None
             },
             "pool": {
                 "fmt": ge.FORMAT_NHWC, "dt": ge.DT_FLOAT16,
@@ -79,20 +81,22 @@ class PyGe(object):
             "fc_1024": {
                 "in_shape": [1, 3136], "out_shape": [1, 3136],
                 "fmt": ge.FORMAT_NHWC, "dt": ge.DT_FLOAT16,
-                "w": None, "w_shape": [3136, 1024], "b": None, "b_shape": [1024, ], "lr": 0.2,
-                "var_name": ["fc_0_w", "fc_0_b"],
-                "var_value": None, "var_desc": None, "var_tensor": None, 
+                "w": None, "w_shape": [3136, 1024], "b": None, "b_shape": [1024, ],
+                "w_acc": None, "b_acc": None,
+                "var_name": ["fc_0_w", "fc_0_b", "fc_0_w_acc", "fc_0_b_acc"],
+                "var_desc": None, "var_tensor": None, 
                 "x": None, "x_act": None, "y_act": None,
-                "var_w": None, "var_b": None
+                "var_w": None, "var_b": None, "var_w_acc": None, "var_b_acc": None
             },
             "fc_10": {
                 "in_shape": [1, 1024], "out_shape": [1, 10],
                 "fmt": ge.FORMAT_NHWC, "dt": ge.DT_FLOAT16,
-                "w": None, "w_shape": [1024, 10], "b": None, "b_shape": [10, ], "lr": 0.2,
-                "var_name": ["fc_1_w", "fc_1_b"],
-                "var_value": None, "var_desc": None, "var_tensor": None,
+                "w": None, "w_shape": [1024, 10], "b": None, "b_shape": [10, ],
+                "w_acc": None, "b_acc": None,
+                "var_name": ["fc_1_w", "fc_1_b", "fc_1_w_acc", "fc_1_b_acc"],
+                "var_desc": None, "var_tensor": None,
                 "x": None, "x_act": None, "y_act": None,
-                "var_w": None, "var_b": None
+                "var_w": None, "var_b": None, "var_w_acc": None, "var_b_acc": None
             },
             "softmax": {
                 "fmt": ge.FORMAT_NHWC, "dt": ge.DT_FLOAT16
@@ -114,6 +118,9 @@ class PyGe(object):
         self.ge_param["sample"]["h"] = h
         self.ge_param["sample"]["w"] = w
         self.ge_param["sample"]["channel"] = channel
+        self.ge_param["sample"]["tensor"] = self.gen_tensor([1], self.ge_param["sample"]["lr"],
+                                                            ge.FORMAT_NHWC, ge.DT_FLOAT16)
+        self.ge_param["sample"]["desc"] = ge.TensorDesc(ge.Shape([1]), ge.FORMAT_NHWC, ge.DT_FLOAT16)
 
     def update_sample_param(self, batch_size=1):
         self.ge_param["sample"]["batch_size"] = batch_size
@@ -167,8 +174,9 @@ class PyGe(object):
                 self.ge_param[key]["w"] = np.fromfile('./data/' + key + '_w_0.bin', dtype=np.float16)
         else:
             self.ge_param[key]["w"] = self.gen_tensor_data_normal(w_shape, dt=self.ge_param[key]["dt"])
-            self.ge_param[key]["b"] = self.gen_tensor_data(b_shape, value=0.02, dt=self.ge_param[key]["dt"])
-
+            self.ge_param[key]["b"] = self.gen_tensor_data(b_shape, value=0.03, dt=self.ge_param[key]["dt"])
+        self.ge_param[key]["w_acc"] = self.gen_tensor_data(w_shape, value=0.0001, dt=self.ge_param[key]["dt"])
+        self.ge_param[key]["b_acc"] = self.gen_tensor_data(b_shape, value=0.0001, dt=self.ge_param[key]["dt"])
         print(key, self.ge_param[key]["w"])
 
         self.ge_param[key]["strides"] = (1, 1, 1, 1)
@@ -176,17 +184,17 @@ class PyGe(object):
         self.ge_param[key]["in_shape_tensor"] = self.gen_tensor([4], in_shape, fmt=self.ge_param[key]["fmt"],
                                                          dt=ge.DT_INT32)
         tensor_desc = ge.TensorDesc(ge.Shape(w_shape), self.ge_param[key]["fmt"], self.ge_param[key]["dt"])
-        rate_desc = ge.TensorDesc(ge.Shape([1, ]), self.ge_param[key]["fmt"], self.ge_param[key]["dt"])
         b_desc = ge.TensorDesc(ge.Shape(b_shape), self.ge_param[key]["fmt"], self.ge_param[key]["dt"])
-        self.ge_param[key]["var_desc"] = [tensor_desc, rate_desc, b_desc]
-        self.ge_param[key]["var_value"] = [self.ge_param[key]["w"], self.ge_param[key]["lr"], self.ge_param[key]["b"]]
+        self.ge_param[key]["var_desc"] = [tensor_desc, b_desc, tensor_desc, b_desc]
         self.ge_param[key]["var_tensor"] = [
             self.gen_tensor(w_shape, self.ge_param[key]["w"], fmt=self.ge_param[key]["fmt"],
                             dt=self.ge_param[key]["dt"]),
-            self.gen_tensor([1, ], self.ge_param[key]["lr"], fmt=self.ge_param[key]["fmt"],
-                            dt=self.ge_param[key]["dt"]),
             self.gen_tensor(b_shape, self.ge_param[key]["b"], fmt=self.ge_param[key]["fmt"],
                             dt=self.ge_param[key]["dt"]),
+            self.gen_tensor(w_shape, self.ge_param[key]["w_acc"], fmt=self.ge_param[key]["fmt"],
+                            dt=self.ge_param[key]["dt"]),
+            self.gen_tensor(b_shape, self.ge_param[key]["b_acc"], fmt=self.ge_param[key]["fmt"],
+                            dt=self.ge_param[key]["dt"])
         ]
 
     def init_fc_param(self, n_out, load_from_bin=False):
@@ -205,20 +213,24 @@ class PyGe(object):
         else:
             self.ge_param[key]["b"] = self.gen_tensor_data(b_shape, value=0.02, dt=self.ge_param[key]["dt"])
             self.ge_param[key]["w"] = self.gen_tensor_data_normal(w_shape, dt=self.ge_param[key]["dt"])
-
+        self.ge_param[key]["w_acc"] = self.gen_tensor_data(w_shape, value=0.0001, dt=self.ge_param[key]["dt"])
+        self.ge_param[key]["b_acc"] = self.gen_tensor_data(b_shape, value=0.0001, dt=self.ge_param[key]["dt"])
         print(key, self.ge_param[key]["w"])
 
         w_desc = ge.TensorDesc(ge.Shape(w_shape), self.ge_param[key]["fmt"], self.ge_param[key]["dt"])
         b_desc = ge.TensorDesc(ge.Shape(b_shape), self.ge_param[key]["fmt"], self.ge_param[key]["dt"])
-        self.ge_param[key]["var_desc"] = [w_desc, b_desc]
-        self.ge_param[key]["var_value"] = [self.ge_param[key]["w"], self.ge_param[key]["b"]]
+        self.ge_param[key]["var_desc"] = [w_desc, b_desc, w_desc, b_desc]
         self.ge_param[key]["var_tensor"] = [
                 self.gen_tensor(w_shape, self.ge_param[key]["w"], fmt=self.ge_param[key]["fmt"],
                                 dt=self.ge_param[key]["dt"]),
                 self.gen_tensor(b_shape, self.ge_param[key]["b"], fmt=self.ge_param[key]["fmt"],
+                                dt=self.ge_param[key]["dt"]),
+                self.gen_tensor(w_shape, self.ge_param[key]["w_acc"], fmt=self.ge_param[key]["fmt"],
+                                dt=self.ge_param[key]["dt"]),
+                self.gen_tensor(b_shape, self.ge_param[key]["b_acc"], fmt=self.ge_param[key]["fmt"],
                                 dt=self.ge_param[key]["dt"])
             ]
-        
+
     def init_pool_param(self):
         key = "pool"
         self.ge_param[key]["in_shape_32"][0] = self.ge_param["sample"]["batch_size"]
@@ -240,45 +252,24 @@ class PyGe(object):
             self.gen_tensor([len(self.ge_param[key]["out_shape_64"]),], 
                              self.ge_param[key]["out_shape_64"], fmt=self.ge_param[key]["fmt"],
                              dt=ge.DT_INT32)                             
-        ]           
+        ]
 
-    def update_conv2d_params(self, filters, dw, db):
+    def update_conv2d_params(self, filters, w, b):
         key = "conv2D_" + str(filters)
-        self.ge_param[key]['lr'] = 0.005
-        self.ge_param[key]["w"] -= self.ge_param[key]['lr']*self.get_tensor_data(dw)
-        self.ge_param[key]["b"] -= self.ge_param[key]['lr']*self.get_tensor_data(db)/self.ge_param[
-            "sample"]["batch_size"]
-        self.ge_param[key]["var_tensor"][0] = self.gen_tensor(self.ge_param[key]['w_shape'], 
-                                                              self.ge_param[key]["w"], 
-                                                              fmt=self.ge_param[key]["fmt"],
-                                                              dt=self.ge_param[key]["dt"])
-        self.ge_param[key]["var_tensor"][2] = self.gen_tensor(self.ge_param[key]['b_shape'], 
-                                                              self.ge_param[key]["b"], 
-                                                              fmt=self.ge_param[key]["fmt"],
-                                                              dt=self.ge_param[key]["dt"])
-        
-    def update_fc_params(self, n_out, dw, db):
+        self.ge_param[key]["var_tensor"][0] = w
+        self.ge_param[key]["var_tensor"][1] = b
+
+    def update_fc_params(self, n_out, w, b):
         key = "fc_" + str(n_out)
-        self.ge_param[key]['lr'] = 0.005
-        self.ge_param[key]["w"] -= self.ge_param[key]['lr']*self.get_tensor_data(dw)
-        self.ge_param[key]["b"] -= self.ge_param[key]['lr']*self.get_tensor_data(db)/self.ge_param[
-            "sample"]["batch_size"]
-        self.ge_param[key]["var_tensor"][0] = self.gen_tensor(self.ge_param[key]['w_shape'], 
-                                                              self.ge_param[key]["w"], 
-                                                              fmt=self.ge_param[key]["fmt"],
-                                                              dt=self.ge_param[key]["dt"])
-        self.ge_param[key]["var_tensor"][1] = self.gen_tensor(self.ge_param[key]['b_shape'], 
-                                                              self.ge_param[key]["b"], 
-                                                              fmt=self.ge_param[key]["fmt"],
-                                                              dt=self.ge_param[key]["dt"])
+        self.ge_param[key]["var_tensor"][0] = w
+        self.ge_param[key]["var_tensor"][1] = b
 
     def update_net_params(self, backward_outputs):
-        # backward: fc_10_dw, fc_10_db, fc_1024_dw, fc_1024_db, conv2d_64_dw, conv2d_32_dw, conv2d_64_db, conv2d_32_db
         self.update_fc_params(10, backward_outputs[0], backward_outputs[1])
         self.update_fc_params(1024, backward_outputs[2], backward_outputs[3])
         self.update_conv2d_params(64, backward_outputs[4], backward_outputs[6])
         self.update_conv2d_params(32, backward_outputs[5], backward_outputs[7]) 
-    
+
     def get_data_type_size(self, dt):
         """
         get data type size
@@ -473,11 +464,13 @@ class PyGe(object):
 
     def layer_conv2D(self, graph, x, filters):
         key = "conv2D_" + str(filters)
-        var_desc = [self.ge_param[key]["var_desc"][0], self.ge_param[key]["var_desc"][2]]
-        var_name = [self.ge_param[key]["var_name"][0], self.ge_param[key]["var_name"][2]]
-        var_w, var_b = self.create_var(graph, var_desc, var_name)
+        var_desc = self.ge_param[key]["var_desc"]
+        var_name = self.ge_param[key]["var_name"]
+        var_w, var_b, var_w_acc, var_b_acc = self.create_var(graph, var_desc, var_name)
         self.ge_param[key]["var_w"] = var_w
         self.ge_param[key]["var_b"] = var_b
+        self.ge_param[key]["var_w_acc"] = var_w_acc
+        self.ge_param[key]["var_b_acc"] = var_b_acc
         conv2d = ge.OperatorFactory.create_operator(key, "Conv2D") \
             .set_input("x", x) \
             .set_input("filter", var_w) \
@@ -507,9 +500,11 @@ class PyGe(object):
         key = "fc_" + str(num_out)
         var_desc = self.ge_param[key]["var_desc"]
         var_name = self.ge_param[key]["var_name"]
-        var_w, var_b = self.create_var(graph, var_desc, var_name)
+        var_w, var_b, var_w_acc, var_b_acc = self.create_var(graph, var_desc, var_name)
         self.ge_param[key]["var_w"] = var_w
         self.ge_param[key]["var_b"] = var_b
+        self.ge_param[key]["var_w_acc"] = var_w_acc
+        self.ge_param[key]["var_b_acc"] = var_b_acc
         fc = ge.OperatorFactory.create_operator(key + "matmul_fc",
                                                 "MatMul").set_input("x1", x) \
             .set_input("x2", var_w) \
@@ -551,6 +546,8 @@ class PyGe(object):
         return relu_grad
 
     def mnist_forward(self, graph, is_train=False):
+        # lr
+        self.ge_param["sample"]["var"] = self.create_var(graph, [self.ge_param["sample"]["desc"]], ["lr"])
         # conv2D 0 [N, 28, 28, 1] conv2d [32, 5, 5, 1] -> [N, 28, 28, 32]
         data_x = ge.OperatorFactory.create_operator("conv2d_0_x", "Data").set_attr_int64("index", 0)
         conv2d_0 = self.layer_conv2D(graph, data_x, 32)
@@ -662,8 +659,10 @@ class PyGe(object):
         key = "fc_10"
         # fc 10
         fc_10_x1 = para_forward['fc_0_relu']
-        # [N, 256].T x [N, 10] -> [256, 10]
+        # [N, 1024].T x [N, 10] -> [1024, 10]
         fc_10_dw = self.ge_matmul("fc_10_dw", fc_10_x1, softmax_grad, idx_2=1, transpose_x1=1, transpose_x2=0)
+        # use optimizer to update parameter
+        optimizer_fc_10_w = self.ge_applyMomentum(graph, key, fc_10_dw)
         # [1, N]  [N, 10] -> [1, 10]
         b_shape = [1, self.ge_param["sample"]["batch_size"]]
         b_data = self.gen_tensor_data(b_shape, value=1, dt=self.ge_param[key]["dt"])
@@ -671,8 +670,14 @@ class PyGe(object):
         db_x1 = ge.OperatorFactory.create_operator("fc_db/x1", "Constant").set_attr_tensor("value", b_tensor)
         graph.add_op(db_x1)
         fc_10_db = self.ge_matmul("fc_10_db", db_x1, softmax_grad, idx_2=1, transpose_x1=0, transpose_x2=0)
+        # use optimizer to update parameter
+        # [1, 10] -> [10, ]
+        input_shapes = self.ge_param[key]["b_shape"]
+        fc_10_db_reshape = self.ge_reshape(fc_10_db, input_shapes, "fc_10_db")
+        graph.add_op(fc_10_db_reshape)
+        optimizer_fc_10_b = self.ge_applyMomentum(graph, key, fc_10_db_reshape, is_w=False)
         fc_10_w = self.ge_param[key]["var_w"]
-        # [N, 10] x [256, 10] -> [N, 256]
+        # [N, 10] x [1024, 10] -> [N, 1024]
         fc_10_grad = self.layer_fc_grad(graph, "fc_10_grad", softmax_grad, fc_10_w, idx_1=1, num_out=10,
             transpose_x1=0, transpose_x2=1)
 
@@ -686,8 +691,16 @@ class PyGe(object):
         fc_1024_relu_grad = self.ge_relu_grad(graph, "fc_1024", fc_10_grad, fc_1024_x_act)
         # [N, 3136] × [N, 1024] -> [3136, 1024]
         fc_1024_dw = self.ge_matmul("fc_1024_dw", fc_1024_x1, fc_1024_relu_grad, transpose_x1=1, transpose_x2=0)
+        # use optimizer to update parameter
+        optimizer_fc_1024_w = self.ge_applyMomentum(graph, key, fc_1024_dw)
         # [1, N] -> [1, 1024]
         fc_1024_db = self.ge_matmul("fc_1024_db", db_x1, fc_1024_relu_grad, transpose_x1=0, transpose_x2=0)
+        # use optimizer to update parameter
+        # [1, 1024] -> [1024, ]
+        input_shapes = self.ge_param[key]["b_shape"]
+        fc_1024_db_reshape = self.ge_reshape(fc_1024_db, input_shapes, "fc_1024_db")
+        graph.add_op(fc_1024_db_reshape)
+        optimizer_fc_1024_b = self.ge_applyMomentum(graph, key, fc_1024_db_reshape, is_w=False)
         fc_1024_w = self.ge_param[key]["var_w"]
         # [N, 1024] × [3136, 1024] -> [N, 3136]
         fc_1024_grad = self.layer_fc_grad(graph, "fc_1024_grad", fc_1024_relu_grad, fc_1024_w, num_out=1024,
@@ -710,9 +723,16 @@ class PyGe(object):
         conv2D_64_relu_grad = self.ge_relu_grad(graph, "conv2D_64", pool_1_grad, conv2D_64_x_act)
         # [N, 14, 14, 64] x [64, 5, 5, 32] -> [N, 14, 14, 32]
         conv2d_64_dw = self.layer_conv2D_filter_grad(graph, 64, conv2d_64_x, conv2D_64_relu_grad)
+        # use optimizer to update parameter
+        optimizer_conv2d_64_w = self.ge_applyMomentum(graph, key, conv2d_64_dw)
         conv2D_64_relu_grad_flat = self.ge_flatten(conv2D_64_relu_grad, "conv2d_64_db/flatten")
         conv2d_64_db = self.ge_matmul("conv2d_64_db", db_x1, conv2D_64_relu_grad_flat, transpose_x1=0, transpose_x2=0)
-        graph.add_op(conv2d_64_db)
+        # use optimizer to update parameter
+        # 2D -> 1D
+        input_shapes = self.ge_param[key]["b_shape"]
+        conv2d_64_db_reshape = self.ge_reshape(conv2d_64_db, input_shapes, "conv2d_64_db")
+        graph.add_op(conv2d_64_db_reshape)
+        optimizer_conv2d_64_b = self.ge_applyMomentum(graph, key, conv2d_64_db_reshape, is_w=False)
         # [N, 28, 28, 64] x [64, 5, 5, 32]
         input_size_1 = ge.OperatorFactory.create_operator("conv2d_64_grad_in/input_size", "Constant") \
             .set_attr_tensor("value", self.ge_param[key]["in_shape_tensor"])
@@ -733,24 +753,38 @@ class PyGe(object):
         conv2D_32_relu_grad = self.ge_relu_grad(graph, "conv2D_32", pool_0_grad, conv2D_32_x_act)
         conv2d_32_x = para_forward['data_x']
         conv2d_32_dw = self.layer_conv2D_filter_grad(graph, 32, conv2d_32_x, conv2D_32_relu_grad)
+        # use optimizer to update parameter
+        optimizer_conv2d_32_w = self.ge_applyMomentum(graph, key, conv2d_32_dw)
         conv2D_32_relu_grad_flat = self.ge_flatten(conv2D_32_relu_grad, "conv2d_32_db/flatten")
         conv2d_32_db = self.ge_matmul("conv2d_32_db", db_x1, conv2D_32_relu_grad_flat, transpose_x1=0, transpose_x2=0)
-        graph.add_op(conv2d_32_db)
+        # use optimizer to update parameter
+        input_shapes = self.ge_param[key]["b_shape"]
+        conv2d_32_db_reshape = self.ge_reshape(conv2d_32_db, input_shapes, "conv2d_32_db")
+        graph.add_op(conv2d_32_db_reshape)
+        optimizer_conv2d_32_b = self.ge_applyMomentum(graph, key, conv2d_32_db_reshape, is_w=False)
         graph.set_inputs([para_forward['data_x']])\
-             .set_outputs([fc_10_dw, fc_10_db, fc_1024_dw, fc_1024_db, conv2d_64_dw, conv2d_32_dw, conv2d_64_db,
-                           conv2d_32_db, para_forward['softmax']])
+             .set_outputs([optimizer_fc_10_w, optimizer_fc_10_b, optimizer_fc_1024_w, optimizer_fc_1024_b,
+                           optimizer_conv2d_64_w, optimizer_conv2d_32_w, optimizer_conv2d_64_b, optimizer_conv2d_32_b,
+                           para_forward['softmax']])
 
     def construct_var_list(self):
         var_desc, var_name, var_tensor = [], [], []
+        # lr
+        var_desc += [self.ge_param["sample"]["desc"]]
+        var_name += ['lr']
+        var_tensor += [self.ge_param["sample"]["tensor"]]
         key = "conv2D_32"
-        var_desc += [self.ge_param[key]["var_desc"][0], self.ge_param[key]["var_desc"][2]]
-        var_name += [self.ge_param[key]["var_name"][0], self.ge_param[key]["var_name"][2]]
-        var_tensor += [self.ge_param[key]["var_tensor"][0], self.ge_param[key]["var_tensor"][2]]
+        # conv2d_0_w, conv2d_0_b
+        var_desc += self.ge_param[key]["var_desc"]
+        var_name += self.ge_param[key]["var_name"]
+        var_tensor += self.ge_param[key]["var_tensor"]
         key = "conv2D_64"
-        var_desc += [self.ge_param[key]["var_desc"][0], self.ge_param[key]["var_desc"][2]]
-        var_name += [self.ge_param[key]["var_name"][0], self.ge_param[key]["var_name"][2]]
-        var_tensor += [self.ge_param[key]["var_tensor"][0], self.ge_param[key]["var_tensor"][2]]
+        # conv2d_1_w, conv2d_1_b
+        var_desc += self.ge_param[key]["var_desc"]
+        var_name += self.ge_param[key]["var_name"]
+        var_tensor += self.ge_param[key]["var_tensor"]
         key = "fc_1024"
+        # w_shape
         var_desc += self.ge_param[key]["var_desc"]
         var_name += self.ge_param[key]["var_name"]
         var_tensor += self.ge_param[key]["var_tensor"]
@@ -759,3 +793,23 @@ class PyGe(object):
         var_name += self.ge_param[key]["var_name"]
         var_tensor += self.ge_param[key]["var_tensor"]
         return var_desc, var_name, var_tensor
+
+    def ge_applyMomentum(self, graph, key, grad, is_w=True):
+        if is_w:
+            var_init_para = self.ge_param[key]["var_w"]
+            var_init_acc = self.ge_param[key]["var_w_acc"]
+            tag = '_w'
+        else:
+            var_init_para = self.ge_param[key]["var_b"]
+            var_init_acc = self.ge_param[key]["var_b_acc"]
+            tag = '_b'
+        var_init_lr = self.ge_param["sample"]["var"]
+        optimizer = ge.OperatorFactory.create_operator(key + '_applyMomentum' + tag, "ApplyMomentum") \
+            .set_input("accum", var_init_acc) \
+            .set_input("grad", grad) \
+            .set_input("lr", var_init_lr) \
+            .set_input("momentum", var_init_lr) \
+            .set_input("var", var_init_para)
+        self.update_op_desc(optimizer, key)
+        return optimizer
+

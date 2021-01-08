@@ -120,4 +120,5 @@ dmypy.json
 omit
 mnist_v3/test_images
 mnist_v3/train_images
+mnist_v3/before
 

@@ -197,16 +197,16 @@ class TestGe(unittest.TestCase):
 
         self.model(ge_handle, inputs)
 
-        for j in range(epoch):
-            print("============ epoch {} ==================\n".format(j+1))
-            for i in range(batch):
-                in_tensor_x = ge_handle.gen_tensor(x_split[i].shape, x_split[i], fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
-                in_tensor_y = ge_handle.gen_tensor(y_split[i].shape, y_split[i], fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
-                real_batch_size = x_split[i].shape[0]
+        for i in range(epoch):
+            print("============ epoch {} ==================\n".format(i+1))
+            for j in range(batch):
+                in_tensor_x = ge_handle.gen_tensor(x_split[j].shape, x_split[j], fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
+                in_tensor_y = ge_handle.gen_tensor(y_split[j].shape, y_split[j], fmt=ge.FORMAT_NHWC, dt=ge.DT_FLOAT16)
+                real_batch_size = x_split[j].shape[0]
                 inputs = [in_tensor_x, in_tensor_y]
                 ge_handle.update_sample_param(batch_size=real_batch_size)
-                for i in range(num_iterations):
-                    print("============ train {} times ==================\n".format(i+1))
+                for k in range(num_iterations):
+                    print("============ train {} times ==================\n".format(k+1))
                     # init forward
                     graph_init = ge.Graph("init_mnist")
                     var_desc_init, var_name_init, var_tensor_init = ge_handle.construct_var_list()
@@ -217,10 +217,10 @@ class TestGe(unittest.TestCase):
                     outputs = ge_handle.run_graph(GRAPH_MNIST, inputs)
                     prints = []
                     data = ge_handle.get_tensor_data(outputs[8])
-                    for j in range(data.size):
-                        if j % 10 == 0 and j != 0:
+                    for m in range(data.size):
+                        if m % 10 == 0 and m != 0:
                             prints += ['|']
-                        prints += [data[j]]
+                        prints += [data[m]]
                     print("softmax::", prints)
                     ge_handle.update_net_params(outputs)
 
@@ -269,7 +269,7 @@ class TestGe(unittest.TestCase):
         ge_handle.init_fc_param(10)
         ge_handle.init_pool_param()
 
-        self.train(ge_handle, x_split, y_split, batch=num, epoch=2, num_iterations=50)
+        self.train(ge_handle, x_split, y_split, batch=num, epoch=4, num_iterations=30)
 
         # save w and b
         ge_handle.save_paras()
@@ -353,5 +353,5 @@ class TestGe(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    suite = switch_cases(TestGe, ["001", "002"])
+    suite = switch_cases(TestGe, ["001"])
     unittest.TextTestRunner(verbosity=2).run(suite)
